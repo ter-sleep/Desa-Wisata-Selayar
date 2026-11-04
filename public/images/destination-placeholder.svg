@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Dokumentasi destinasi belum tersedia">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dfe7dc"/><stop offset="1" stop-color="#a8b9a7"/></linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <circle cx="930" cy="180" r="78" fill="#f2e6ca" opacity=".85"/>
+  <path d="M0 590 260 350l170 150 210-265 260 310 130-130 170 175v210H0Z" fill="#6e8876" opacity=".75"/>
+  <path d="M0 660 220 500l200 140 230-180 280 205 120-100 150 100v135H0Z" fill="#315c49" opacity=".85"/>
+  <text x="600" y="735" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" fill="#fff" letter-spacing="4">DOKUMENTASI MENYUSUL</text>
+</svg>
