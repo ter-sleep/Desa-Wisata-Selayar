@@ -4,10 +4,7 @@ import { useEffect } from 'react'
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLngExpression, LeafletMouseEvent } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-
-// Titik ini hanya pusat tampilan awal peta administratif, bukan koordinat destinasi.
-// Posisi destinasi hanya disimpan setelah dipilih dari GPS perangkat atau klik peta.
-const DEFAULT_VIEW: LatLngExpression = [-6.07902, 120.52937]
+import { bontomarannuView } from '@/lib/map-data'
 
 type Props = {
   latitude: number | null
@@ -39,7 +36,7 @@ export function CoordinatePickerMap({ latitude, longitude, onSelect }: Props) {
   return (
     <div className="gps-picker-map-shell">
       <MapContainer
-        center={selected || DEFAULT_VIEW}
+        center={selected || bontomarannuView}
         zoom={selected ? 17 : 13}
         scrollWheelZoom
         className="gps-picker-map"

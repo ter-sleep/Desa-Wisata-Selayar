@@ -13,6 +13,20 @@ CI menguji migration dan API melalui stack Supabase lokal sementara, dengan Auth
 
 Tanpa environment Supabase, katalog statis lama menjadi fallback tampilan; formulir tidak menyimpan data, login dinonaktifkan, dan tidak ada marker GPS yang dibuat dari perkiraan. Jika Supabase sudah dikonfigurasi tetapi query gagal, kesalahan tidak diperlakukan sebagai data kosong yang valid.
 
+## Preferensi publik dan renderer peta
+
+`lib/i18n.ts` menyediakan katalog Indonesia/English bertipe dan terjemahan exact-match untuk teks editorial. `lib/site-preferences.ts` membaca cookie di server, sedangkan `components/site-preferences.tsx` menyinkronkan bahasa, tema, dan atribut dokumen di client. Cookie `dewis-language` dan `dewis-theme` dibatasi ke nilai yang didukung, berlaku satu tahun, `SameSite=Lax`, serta `Secure` pada HTTPS. Tema tanpa pilihan eksplisit mengikuti sistem. Root layout menginisialisasi tema sebelum hidrasi; halaman 404 tetap memakai translator server agar konten pemulihan hadir dalam respons HTTP awal.
+
+Pergantian bahasa tidak mengubah rute. Konten CMS yang tidak dikenali katalog tetap dalam bahasa penulis; aplikasi tidak mengirim teks ke layanan terjemahan. Dashboard operasional tidak diterjemahkan secara menyeluruh, sementara halaman publik dan login mendukung kedua bahasa.
+
+`lib/map-data.ts` menyaring DTO destinasi menjadi titik publik terverifikasi, menyediakan filter, Haversine, dan URL petunjuk arah bersama. `components/tourism-map.tsx` mempertahankan pencarian, kategori, seleksi, serta posisi perangkat di antara kedua mode. Target kamera terpisah dari posisi perangkat sehingga memilih destinasi tidak menghilangkan jarak.
+
+`lib/tourism-geography.ts` memuat snapshot GeoJSON lokal dan memvalidasi identitas/kode wilayah serta geometri. GeoJSON memakai urutan longitude/latitude; posisi aplikasi memakai latitude/longitude; proyeksi miniatur memakai timur sebagai X dan utara sebagai Z negatif. Snapshot tidak membuat koordinat destinasi dan tidak mengubah tabel database. Batas Desa Bontomarannu bersifat indikatif; batas kecamatan berasal dari Bontomanai. Provenance dan ketentuan pemakaian dicatat di `public/maps/sources.json`.
+
+`components/satellite-map.tsx` memakai Leaflet, tile Esri/OpenStreetMap, dan dua geometri batas administratif. `components/miniature-map.tsx` dimuat secara lazy dan mengelola lifecycle `lib/miniature-scene.ts`: Three.js/OrbitControls, siluet geografis, relief/vegetasi/bangunan ilustratif, serta label HTML yang aksesibel. Pin dan tindakan koordinat hanya berasal dari titik terverifikasi; label pusat wilayah bukan pin wisata.
+
+Tema dan bahasa diperbarui tanpa membangun ulang kamera miniatur. Observer menghentikan animasi di luar viewport. Cleanup melepaskan kontrol, observer, buffer, material, tekstur, shadow, konteks WebGL, serta label; retry setelah kehilangan konteks mempertahankan kamera. Kegagalan geometri, sumber data, citra, atau WebGL memiliki pesan pemulihan yang eksplisit. Lokasi pengunjung hanya berada di memori browser, tetapi tile satelit dapat mengungkap area viewport kepada penyedia; tautan petunjuk arah membuka Google Maps atas pilihan pengunjung.
+
 ## Autentikasi dan role
 
 Profil baru dari Auth dimulai sebagai `visitor`. Akun harus aktif dan memiliki role staf untuk masuk ke dashboard. Akun awal dibuat oleh pemilik dan dipromosikan secara eksplisit sesuai `docs/TAHAP-2.md`; aplikasi belum menyediakan UI manajemen role.
