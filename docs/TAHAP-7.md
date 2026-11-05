@@ -9,7 +9,7 @@ Pemeriksaan berikut dijalankan pada 5 November 2026 tanpa kredensial Supabase ho
 | `pnpm install --frozen-lockfile` | Berhasil; build script `esbuild` diizinkan secara eksplisit di konfigurasi pnpm. |
 | `pnpm lint` | Berhasil tanpa warning. |
 | `pnpm typecheck` | Berhasil. |
-| `pnpm test` | Berhasil: 7 unit test, 10 test/subtest database, 2 test pengaman integrasi, dan 1 smoke test HTTP lokal. |
+| `pnpm test` | Berhasil: 7 unit test, 10 test/subtest database, 2 test pengaman integrasi, 7 test diagnostik dan startup CI, serta 1 smoke test HTTP lokal. |
 | `pnpm build` | Berhasil dengan environment Supabase belum dikonfigurasi. |
 | Smoke test HTTP | 16 rute/ikon publik merespons 200, 8 rute admin mengarahkan ke login, dan destinasi tidak dikenal merespons 404. |
 | Pemeriksaan browser dasar | Katalog/search, keadaan peta kosong, dan error formulir kontak tanpa konfigurasi bekerja. Pada lebar 375, 768, dan 1280 px, lima halaman publik tidak menunjukkan overflow horizontal; label input/alt gambar dan menu responsif diperiksa secara dasar. |
