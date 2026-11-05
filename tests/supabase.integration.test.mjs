@@ -229,14 +229,12 @@ test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 240000 }
     }
 
     requireDenied(await editor.from('reservations').update({ visitor_name: 'Diubah' }).eq('id', savedBooking.id), 'Editor visitor detail update')
-    const wrongActor = await editor.from('reservations').update({
-      status: 'confirmed', processed_by: users.admin.id, processed_at: new Date().toISOString(),
-    }).eq('id', savedBooking.id)
-    assert.match(wrongActor.error?.message || '', /Identitas/)
     const confirmed = requireData(await editor.from('reservations').update({
-      status: 'confirmed', processed_by: users.editor.id, processed_at: new Date().toISOString(),
-    }).eq('id', savedBooking.id).select('status, updated_at').single(), 'Confirm reservation')
+      status: 'confirmed', processed_by: users.admin.id, processed_at: '2000-01-01T00:00:00Z',
+    }).eq('id', savedBooking.id).select('status, processed_by, processed_at, updated_at').single(), 'Confirm reservation')
     assert.equal(confirmed.status, 'confirmed')
+    assert.equal(confirmed.processed_by, users.editor.id)
+    assert.equal(confirmed.processed_at, confirmed.updated_at)
     await new Promise((resolve) => setTimeout(resolve, 10))
     requireData(await editor.from('reservations').update({ admin_notes: 'Catatan terbaru' })
       .eq('id', savedBooking.id).select('id').single(), 'Update reservation notes')
@@ -264,6 +262,94 @@ test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 240000 }
     }).eq('id', savedMessage.id).eq('status', 'read').eq('updated_at', readMessage.updated_at).select('id'), 'Reject stale message update')
     assert.equal(staleMessage.length, 0)
   })
+
+  for (const [table, statuses] of [['reservations', ['confirmed', 'completed']], ['contact_messages', ['read', 'replied']]]) {
+    await t.test(`${table} processing metadata cannot be forged through PostgREST`, async () => {
+      async function createRegressionRecord(label) {
+        if (table === 'reservations') {
+          const booking = requireData(await anon.rpc('submit_public_reservation', {
+            p_destination_id: destination.id,
+            p_visitor_name: 'Pengunjung Uji',
+            p_email: null,
+            p_whatsapp: '081234567890',
+            p_visit_date: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+            p_participant_count: 2,
+            p_visitor_notes: null,
+            p_privacy_consent: true,
+          }), 'Create processing regression reservation')
+          return requireData(await service.from(table).select('id').eq('booking_code', booking[0].booking_code).single(), 'Read regression reservation').id
+        } else {
+          const message = `Processing regression ${label} ${marker}`
+          requireData(await anon.rpc('submit_public_contact_message', {
+            p_visitor_name: 'Pengunjung Uji', p_email: null, p_phone: null,
+            p_subject: fixture.subject, p_message: message, p_privacy_consent: true,
+          }), 'Create processing regression message')
+          return requireData(await service.from(table).select('id').eq('subject', fixture.subject).eq('message', message).single(), 'Read regression message').id
+        }
+      }
+      for (const [name, account] of [['editor', users.editor], ['admin', users.admin], ['superAdmin', users.superAdmin]]) {
+        const id = await createRegressionRecord(name)
+        const otherActor = name === 'admin' ? users.editor.id : users.admin.id
+        const readRecord = async () => requireData(await service.from(table).select('*').eq('id', id).single(), 'Read processing metadata')
+        const initial = await readRecord()
+        for (const [label, outsider] of [['anonymous', anon], ['visitor', visitor], ['inactive', inactive]]) {
+          requireInvisible(await outsider.from(table).update({
+            status: statuses[0], processed_by: otherActor, processed_at: '2099-01-01T00:00:00Z',
+          }).eq('id', id).select('id'), `${label} ${table} processing update`)
+        }
+        assert.deepEqual(await readRecord(), initial)
+        for (const patch of [{ processed_by: otherActor }, { processed_at: '2000-01-01T00:00:00Z' }]) {
+          const attempted = await account.client.from(table).update(patch).eq('id', id)
+          assert.equal(attempted.error?.code, '23514', 'Initial processing metadata must not change without a status transition')
+          assert.deepEqual(await readRecord(), initial)
+        }
+        const invalid = await account.client.from(table).update({ status: statuses[1] }).eq('id', id)
+        assert.equal(invalid.error?.code, '23514', 'Invalid status transitions remain forbidden')
+        for (const [index, status] of statuses.entries()) {
+          const before = Date.now()
+          const processed = requireData(await account.client.from(table).update({
+            status,
+            processed_by: index === 0 ? otherActor : null,
+            processed_at: index === 0 ? '2000-01-01T00:00:00Z' : '2099-01-01T00:00:00Z',
+          }).eq('id', id).select('status, processed_by, processed_at, updated_at').single(), `Process ${table} as ${name}`)
+          assert.equal(processed.status, status)
+          assert.equal(processed.processed_by, account.id)
+          assert.equal(processed.processed_at, processed.updated_at, 'Processing time matches the database-generated revision time')
+          const processingTime = Date.parse(processed.processed_at)
+          assert.ok(processingTime >= before - 1000 && processingTime <= Date.now() + 1000, 'Processing time must be current database time')
+        }
+        const snapshot = await readRecord()
+        for (const patch of [
+          { processed_by: otherActor }, { processed_by: null },
+          { processed_at: '2000-01-01T00:00:00Z' }, { processed_at: null },
+        ]) {
+          const attempted = await account.client.from(table).update(patch).eq('id', id)
+          assert.equal(attempted.error?.code, '23514', 'Processing metadata must not change without a status transition')
+          assert.deepEqual(await readRecord(), snapshot)
+        }
+        for (const column of ['visitor_name', 'privacy_consent_at', 'created_at', 'updated_at', table === 'reservations' ? 'visitor_notes' : 'message']) {
+          requireDenied(await account.client.from(table).update({ [column]: snapshot[column] }).eq('id', id),
+            `${name} protected ${table}.${column} update`)
+        }
+        const noOp = requireData(await account.client.from(table).update({
+          status: snapshot.status,
+          processed_by: snapshot.processed_by,
+          processed_at: snapshot.processed_at,
+          ...(table === 'reservations' ? { admin_notes: 'Catatan operasional' } : {}),
+        }).eq('id', id).select(table === 'reservations' ? 'processed_by, processed_at, admin_notes' : 'processed_by, processed_at').single(),
+        'Keep processing metadata unchanged during an operational update')
+        assert.equal(noOp.processed_by, snapshot.processed_by)
+        assert.equal(noOp.processed_at, snapshot.processed_at)
+        if (table === 'reservations') assert.equal(noOp.admin_notes, 'Catatan operasional')
+        const nullMetadataId = await createRegressionRecord(`${name}-null`)
+        const normalized = requireData(await account.client.from(table).update({
+          status: statuses[0], processed_by: null, processed_at: null,
+        }).eq('id', nullMetadataId).select('processed_by, processed_at, updated_at').single(), 'Normalize missing client processing metadata')
+        assert.equal(normalized.processed_by, account.id)
+        assert.equal(normalized.processed_at, normalized.updated_at)
+      }
+    })
+  }
 
   await t.test('GPS review and settings require the intended staff role', async () => {
     const coords = requireData(await editor.from('destinations').update({

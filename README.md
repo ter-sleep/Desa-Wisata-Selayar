@@ -52,6 +52,7 @@ Jalankan migration melalui Supabase Dashboard → SQL Editor secara berurutan:
 4. `supabase/migrations/202611040004_gps_management.sql` — metadata pengambilan koordinat, pemeriksaan GPS, dan pengaman perubahan status verifikasi.
 5. `supabase/migrations/202611040005_reservations_and_contact.sql` — RPC reservasi/kontak, persetujuan privasi, dan transisi status.
 6. `supabase/migrations/202611040006_stage_7_hardening.sql` — validasi nomor, koreksi izin GPS, dan atribusi pemeriksa.
+7. `supabase/migrations/202611050007_visitor_processing_integrity.sql` — identitas/waktu pemrosesan reservasi dan pesan ditetapkan database.
 
 Terapkan setiap migration **sekali dan berurutan** pada proyek baru. Untuk database yang telah memiliki riwayat migration, terapkan hanya versi yang belum dijalankan; jangan mengulang migration awal. Jangan jalankan migration terhadap produksi tanpa persetujuan dan cadangan yang sesuai.
 
@@ -135,7 +136,7 @@ Tahap 6 menambahkan formulir reservasi publik, kode booking, pengelolaan status 
 - `/admin/pengaturan` — pengaturan WhatsApp dan alamat publik.
 
 ### Migration
-Jalankan migration 005 setelah migration 001–004 dan lanjutkan dengan migration 006. RPC `submit_public_reservation` mengembalikan kode booking tanpa memberikan hak baca data reservasi kepada pengunjung.
+Jalankan migration 005 setelah migration 001–004 dan lanjutkan dengan migration 006–007. RPC `submit_public_reservation` mengembalikan kode booking tanpa memberikan hak baca data reservasi kepada pengunjung.
 
 ### Catatan operasional
 - Reservasi menggunakan konfirmasi manual; tidak ada pembayaran online atau notifikasi WhatsApp otomatis.
@@ -145,6 +146,8 @@ Jalankan migration 005 setelah migration 001–004 dan lanjutkan dengan migratio
 - `privacy_consent_at` mencatat waktu persetujuan dari server.
 - RPC reservasi dan kontak berjalan dengan hak terkontrol; publik tidak memperoleh akses SELECT ke data pengunjung.
 - Trigger database memvalidasi perpindahan status reservasi/pesan dan hak UPDATE staf dibatasi ke kolom operasional.
+- Sejak migration 007, transisi status menetapkan `processed_by = auth.uid()` dan `processed_at = now()` di PostgreSQL. Nilai client diabaikan; perubahan metadata tanpa perubahan status ditolak. Catatan reservasi tetap dapat diperbarui tanpa mengubah metadata pemrosesan.
+- Migration 007 tidak menulis ulang data historis. Penghapusan profil yang masih menjadi pemroses ditolak untuk mempertahankan atribusi; nonaktifkan akun staf melalui `is_active` jika aksesnya perlu dicabut.
 
 ## Deployment
 

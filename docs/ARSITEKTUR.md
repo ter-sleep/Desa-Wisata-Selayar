@@ -29,7 +29,11 @@ Profil baru dari Auth dimulai sebagai `visitor`. Akun harus aktif dan memiliki r
 | Ubah role/status profil | Ya | Tidak | Tidak | Tidak |
 | Kirim reservasi/kontak melalui RPC | Ya | Ya | Ya | Ya |
 
-RLS tidak memberi pengunjung hak baca reservasi atau pesan. Trigger memastikan transisi status yang valid dan mencatat akun pemroses. Nomor WhatsApp baru divalidasi pada server dan database. Audit log aplikasi bersifat **best effort**: kegagalan insert dicatat pada log server dan tidak membatalkan operasi utama; perubahan langsung melalui API tidak otomatis menghasilkan entri audit yang setara.
+RLS tidak memberi pengunjung hak baca reservasi atau pesan. Sejak migration 007, kedua trigger memastikan transisi status yang valid lalu menetapkan `processed_by` dari `auth.uid()` dan `processed_at` dari `now()` PostgreSQL, bukan payload client. Transisi tanpa identitas terautentikasi ditolak. Metadata tersebut tidak dapat diubah atau dikosongkan jika status tidak berubah; perubahan catatan reservasi tetap diizinkan. Server Actions hanya mengirim status/catatan dan mempertahankan pemeriksaan versi `updated_at`.
+
+Migration 007 hanya mengganti fungsi trigger yang sudah terpasang, tanpa backfill, perubahan RLS/grant, atau perubahan baris historis. Karena foreign key pemroses sebelumnya memakai `ON DELETE SET NULL`, penghapusan profil pemroses kini ditolak oleh pengaman metadata; nonaktifkan akun staf dengan `is_active = false` untuk mencabut akses tanpa kehilangan atribusi.
+
+Nomor WhatsApp baru divalidasi pada server dan database. Audit log aplikasi bersifat **best effort**: kegagalan insert dicatat pada log server dan tidak membatalkan operasi utama; perubahan langsung melalui API tidak otomatis menghasilkan entri audit yang setara. Perbaikan ini mengamankan metadata pemrosesan terakhir, bukan menambahkan riwayat setiap transisi.
 
 ## Storage, GPS, dan data pengunjung
 

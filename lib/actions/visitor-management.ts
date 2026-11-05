@@ -49,8 +49,6 @@ export async function updateReservation(formData: FormData) {
   const { data: updated, error } = await supabase.from('reservations').update({
     status: nextStatus,
     admin_notes: adminNotes || null,
-    processed_by: profile.id,
-    processed_at: new Date().toISOString(),
   }).eq('id', id).eq('status', currentStatus).eq('updated_at', updatedAt).select('id').maybeSingle()
   if (error) actionError(returnTo, `Reservasi gagal diperbarui: ${error.message}`)
   if (!updated) actionError(returnTo, 'Status reservasi sudah berubah. Muat ulang sebelum mencoba kembali.')
@@ -96,8 +94,6 @@ export async function updateContactMessage(formData: FormData) {
 
   const { data: updated, error } = await supabase.from('contact_messages').update({
     status: nextStatus,
-    processed_by: profile.id,
-    processed_at: new Date().toISOString(),
   }).eq('id', id).eq('status', currentStatus).eq('updated_at', updatedAt).select('id').maybeSingle()
   if (error) actionError(returnTo, `Pesan gagal diperbarui: ${error.message}`)
   if (!updated) actionError(returnTo, 'Status pesan sudah berubah. Muat ulang sebelum mencoba kembali.')

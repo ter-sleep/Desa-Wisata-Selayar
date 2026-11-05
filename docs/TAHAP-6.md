@@ -30,6 +30,7 @@ Jalankan setelah migration Tahap 2–5 sudah diterapkan. Urutan lengkap pada pro
 4. `202611040004_gps_management.sql`
 5. `202611040005_reservations_and_contact.sql`
 6. `202611040006_stage_7_hardening.sql`
+7. `202611050007_visitor_processing_integrity.sql`
 
 Migration Tahap 6:
 - Menambah `privacy_consent_at` pada reservasi dan pesan.
@@ -40,6 +41,7 @@ Migration Tahap 6:
 - Menambahkan trigger PostgreSQL untuk menolak transisi status yang tidak diizinkan meskipun permintaan dikirim langsung melalui API.
 - Membatasi EXECUTE kedua RPC hanya untuk role `anon` dan `authenticated`; pengunjung tidak memperoleh hak SELECT data reservasi/pesan.
 - Migration 006 menghapus policy insert reservasi lama dan memvalidasi nomor WhatsApp baru di database.
+- Migration 007 menetapkan pemroses dari `auth.uid()` dan waktu pemrosesan dari `now()` database pada transisi yang valid, serta menolak perubahan keduanya tanpa transisi. Migration ini tidak mengubah data historis atau hak akses staf.
 
 ## Konfigurasi WhatsApp
 
@@ -87,7 +89,8 @@ Transisi pesan:
 
 - Formulir publik memakai Server Actions, validasi server, honeypot dasar, dan RPC database.
 - Pengunjung tidak mendapatkan hak baca atas tabel reservasi atau pesan.
-- Status awal dan waktu pemrosesan ditetapkan database/server, bukan dari input browser.
+- Status awal serta identitas/waktu pemrosesan ditetapkan database, bukan dari input browser atau payload API.
+- Penghapusan profil yang masih tercatat sebagai pemroses ditolak untuk mempertahankan atribusi; nonaktifkan akun staf untuk mencabut aksesnya.
 - Pembaruan status hanya tersedia untuk staf yang telah lolos pemeriksaan role.
 - Aktivitas status dan pengaturan dicatat ke `audit_logs` sebagai upaya pencatatan pendukung.
 - Kebijakan privasi di dalam aplikasi merupakan naskah awal operasional. Pengelola perlu meninjau kontak pengendali data, tujuan rinci, dasar pemrosesan, jangka waktu retensi, dan prosedur permintaan/penghapusan data sebelum website dipublikasikan.

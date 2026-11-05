@@ -2,7 +2,7 @@
 
 Tahap ini menyiapkan integrasi Supabase untuk aplikasi Next.js 16 App Router.
 
-> Dokumen ini menjelaskan fondasi Tahap 2. Kondisi akhir memerlukan seluruh migration 001–006: bucket menjadi privat pada 003, dan reservasi/kontak publik memakai RPC sejak 005. Lihat README untuk urutan terkini.
+> Dokumen ini menjelaskan fondasi Tahap 2. Kondisi akhir memerlukan seluruh migration 001–007: bucket menjadi privat pada 003, reservasi/kontak publik memakai RPC sejak 005, dan metadata pemrosesan ditetapkan database sejak 007. Lihat README untuk urutan terkini.
 
 ## Yang ditambahkan
 

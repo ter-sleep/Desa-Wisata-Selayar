@@ -242,24 +242,53 @@ export async function testAppFlows(t, {
 
   const recordForm = (id) => (form) => hasFormClass('admin-status-form')(form) && form.includes(`value="${id}"`)
   const reservationForm = await loadForm(editor, '/admin/reservasi', recordForm(reservation.id), 'Reservation status')
+  const reservationStart = Date.now()
   expectRedirect(await submit(editor, '/admin/reservasi', reservationForm, {
     id: reservation.id,
     updated_at: reservation.updated_at,
     status: 'confirmed',
     admin_notes: 'Dikonfirmasi melalui UI',
+    processed_by: users.admin.id,
+    processed_at: '2000-01-01T00:00:00Z',
   }), origin, '/admin/reservasi', ['status', 'updated'], 'Update reservation', safeMessage)
-  const updatedReservation = requireData(await service.from('reservations').select('status')
+  const reservationColumns = 'status, admin_notes, processed_by, processed_at, updated_at'
+  const updatedReservation = requireData(await service.from('reservations').select(reservationColumns)
     .eq('id', reservation.id).single(), 'Read updated reservation')
   assert.equal(updatedReservation.status, 'confirmed')
+  assert.equal(updatedReservation.admin_notes, 'Dikonfirmasi melalui UI')
+  assert.equal(updatedReservation.processed_by, users.editor.id)
+  assert.equal(updatedReservation.processed_at, updatedReservation.updated_at)
+  assert.ok(Date.parse(updatedReservation.processed_at) >= reservationStart - 1000 &&
+    Date.parse(updatedReservation.processed_at) <= Date.now() + 1000, 'Reservation processing time is database time')
+  const staleReservation = expectRedirect(await submit(editor, '/admin/reservasi', reservationForm, {
+    id: reservation.id, updated_at: reservation.updated_at, status: 'completed', admin_notes: 'Catatan lama',
+  }), origin, '/admin/reservasi', null, 'Stale reservation update', safeMessage)
+  assert.match(staleReservation.searchParams.get('error') || '', /sudah berubah/)
+  assert.deepEqual(requireData(await service.from('reservations').select(reservationColumns)
+    .eq('id', reservation.id).single(), 'Read reservation after stale action'), updatedReservation)
   const messageForm = await loadForm(editor, '/admin/pesan', recordForm(message.id), 'Message status')
+  const messageStart = Date.now()
   expectRedirect(await submit(editor, '/admin/pesan', messageForm, {
     id: message.id,
     updated_at: message.updated_at,
     status: 'read',
+    processed_by: users.admin.id,
+    processed_at: '2099-01-01T00:00:00Z',
   }), origin, '/admin/pesan', ['status', 'updated'], 'Update message', safeMessage)
-  const updatedMessage = requireData(await service.from('contact_messages').select('status')
+  const messageColumns = 'status, processed_by, processed_at, updated_at'
+  const updatedMessage = requireData(await service.from('contact_messages').select(messageColumns)
     .eq('id', message.id).single(), 'Read updated message')
   assert.equal(updatedMessage.status, 'read')
+  assert.equal(updatedMessage.processed_by, users.editor.id)
+  assert.equal(updatedMessage.processed_at, updatedMessage.updated_at)
+  assert.ok(Date.parse(updatedMessage.processed_at) >= messageStart - 1000 &&
+    Date.parse(updatedMessage.processed_at) <= Date.now() + 1000, 'Message processing time is database time')
+  const staleMessage = expectRedirect(await submit(editor, '/admin/pesan', messageForm, {
+    id: message.id, updated_at: message.updated_at, status: 'replied',
+  }), origin, '/admin/pesan', null, 'Stale message update', safeMessage)
+  assert.match(staleMessage.searchParams.get('error') || '', /sudah berubah/)
+  assert.deepEqual(requireData(await service.from('contact_messages').select(messageColumns)
+    .eq('id', message.id).single(), 'Read message after stale action'), updatedMessage)
 
   const deleteMedia = await loadForm(editor, '/admin/galeri', (form) => form.includes(`value="${media.id}"`) && form.includes('Hapus'),
     'Delete media')

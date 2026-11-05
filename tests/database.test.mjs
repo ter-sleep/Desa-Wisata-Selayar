@@ -78,6 +78,25 @@ async function asRole(db, role, userId, work) {
   }
 }
 
+async function createVisitorRecord(db, table, destinationId, {
+  status = table === 'reservations' ? 'pending' : 'new',
+  processedBy = null,
+  processedAt = null,
+} = {}) {
+  const sql = table === 'reservations' ? `
+    insert into public.reservations (
+      destination_id, visitor_name, whatsapp, visit_date, participant_count, status, processed_by, processed_at
+    ) values ($1, 'Pengunjung Uji', '081234567890', current_date + 1, 2, $2, $3, $4) returning id
+  ` : `
+    insert into public.contact_messages (visitor_name, message, status, processed_by, processed_at)
+    values ('Pengunjung Uji', 'Pesan pengujian integritas.', $1, $2, $3) returning id
+  `
+  const result = await db.query(sql, table === 'reservations'
+    ? [destinationId, status, processedBy, processedAt]
+    : [status, processedBy, processedAt])
+  return result.rows[0].id
+}
+
 test('migrations preserve rows and enforce application and Storage access', async (t) => {
   const db = new PGlite()
   t.after(() => db.close())
@@ -158,6 +177,8 @@ test('migrations preserve rows and enforce application and Storage access', asyn
         assert.equal((await db.query('select * from public.contact_messages')).rows.length, 0)
         const updated = await db.query("update public.profiles set role = 'super_admin' where id = $1 returning id", [user])
         assert.equal(updated.rows.length, 0)
+        assert.equal((await db.query("update public.reservations set status = 'confirmed' where id = $1 returning id", [bookingId])).rows.length, 0)
+        assert.equal((await db.query("update public.contact_messages set status = 'read' where id = $1 returning id", [contactId])).rows.length, 0)
       })
     }
     for (const user of [users.superAdmin, users.admin, users.editor]) {
@@ -184,14 +205,13 @@ test('migrations preserve rows and enforce application and Storage access', asyn
 
   await t.test('status transitions enforce actor identity and protect visitor details', async () => {
     await asRole(db, 'authenticated', users.editor, async () => {
-      await assert.rejects(() => db.query(`
-        update public.reservations set status = 'confirmed', processed_by = $1, processed_at = now() where id = $2
-      `, [users.admin, bookingId]), /Identitas/i)
       const confirmed = await db.query(`
         update public.reservations set status = 'confirmed', processed_by = $1, processed_at = now()
-        where id = $2 returning status
-      `, [users.editor, bookingId])
+        where id = $2 returning status, processed_by, processed_at = now() as database_time
+      `, [users.admin, bookingId])
       assert.equal(confirmed.rows[0].status, 'confirmed')
+      assert.equal(confirmed.rows[0].processed_by, users.editor)
+      assert.equal(confirmed.rows[0].database_time, true)
       await assert.rejects(() => db.query(`
         update public.reservations set status = 'rejected', processed_by = $1, processed_at = now() where id = $2
       `, [users.editor, bookingId]), /Transisi/i)
@@ -201,10 +221,81 @@ test('migrations preserve rows and enforce application and Storage access', asyn
       `, [users.editor, contactId]), /Transisi/i)
       const read = await db.query(`
         update public.contact_messages set status = 'read', processed_by = $1, processed_at = now()
-        where id = $2 returning status
-      `, [users.editor, contactId])
+        where id = $2 returning status, processed_by, processed_at = now() as database_time
+      `, [users.admin, contactId])
       assert.equal(read.rows[0].status, 'read')
+      assert.equal(read.rows[0].processed_by, users.editor)
+      assert.equal(read.rows[0].database_time, true)
     })
+  })
+
+  await t.test('both visitor tables own processing metadata and retain operational-only staff grants', async () => {
+    for (const [table, statuses, protectedColumns] of [
+      ['reservations', ['confirmed', 'completed'], ['visitor_name', 'email', 'whatsapp', 'destination_id', 'booking_code', 'visit_date', 'participant_count', 'visitor_notes', 'privacy_consent_at', 'created_at', 'updated_at']],
+      ['contact_messages', ['read', 'replied'], ['visitor_name', 'email', 'phone', 'subject', 'message', 'privacy_consent_at', 'created_at', 'updated_at']],
+    ]) {
+      const grants = await db.query(`
+        select column_name from information_schema.column_privileges
+        where table_schema = 'public' and table_name = $1
+          and grantee = 'authenticated' and privilege_type = 'UPDATE'
+        order by column_name
+      `, [table])
+      assert.deepEqual(grants.rows.map((row) => row.column_name),
+        table === 'reservations' ? ['admin_notes', 'processed_at', 'processed_by', 'status'] : ['processed_at', 'processed_by', 'status'])
+
+      for (const actor of [users.editor, users.admin, users.superAdmin]) {
+        const id = await createVisitorRecord(db, table, destinationId)
+        const statusOnlyId = await createVisitorRecord(db, table, destinationId)
+        const nullMetadataId = await createVisitorRecord(db, table, destinationId)
+        await assert.rejects(() => db.query(`update public.${table} set status = $1 where id = $2`, [statuses[0], id]),
+          (error) => error.code === '42501' && /terautentikasi/.test(error.message))
+        await asRole(db, 'authenticated', actor, async () => {
+          const otherActor = actor === users.admin ? users.editor : users.admin
+          for (const [column, forgedValue] of [['processed_by', otherActor], ['processed_at', '2000-01-01T00:00:00Z']]) {
+            await assert.rejects(() => db.query(`update public.${table} set ${column} = $1 where id = $2`, [forgedValue, id]),
+              (error) => error.code === '23514' && /hanya dapat berubah/.test(error.message))
+          }
+          for (const [index, status] of statuses.entries()) {
+            const transitioned = await db.query(`
+              update public.${table} set status = $1, processed_by = $2, processed_at = $3
+              where id = $4 returning status, processed_by, processed_at::text,
+                processed_at = now() as database_time, processed_at = updated_at as revision_time
+            `, [status, index === 0 ? otherActor : null, index === 0 ? '2000-01-01T00:00:00Z' : '2099-01-01T00:00:00Z', id])
+            assert.equal(transitioned.rows[0].status, status)
+            assert.equal(transitioned.rows[0].processed_by, actor)
+            assert.equal(transitioned.rows[0].database_time, true)
+            assert.equal(transitioned.rows[0].revision_time, true)
+          }
+          const snapshot = (await db.query(`select * from public.${table} where id = $1`, [id])).rows[0]
+          for (const [column, forgedValue] of [
+            ['processed_by', otherActor], ['processed_by', null],
+            ['processed_at', '2099-01-01T00:00:00Z'], ['processed_at', null],
+          ]) {
+            await assert.rejects(() => db.query(`update public.${table} set ${column} = $1 where id = $2`, [forgedValue, id]),
+              (error) => error.code === '23514' && /hanya dapat berubah/.test(error.message))
+            assert.deepEqual((await db.query(`select * from public.${table} where id = $1`, [id])).rows[0], snapshot)
+          }
+          for (const column of protectedColumns) {
+            await assert.rejects(() => db.query(`update public.${table} set ${column} = ${column} where id = $1`, [id]),
+              (error) => error.code === '42501')
+          }
+          const unchanged = await db.query(`
+            update public.${table} set processed_by = processed_by, processed_at = processed_at${table === 'reservations' ? ", admin_notes = 'Catatan operasional'" : ', status = status'}
+            where id = $1 returning processed_by, processed_at
+          `, [id])
+          assert.equal(unchanged.rows[0].processed_by, snapshot.processed_by)
+          assert.deepEqual(unchanged.rows[0].processed_at, snapshot.processed_at)
+          for (const [compatibleId, assignment] of [[statusOnlyId, ''], [nullMetadataId, ', processed_by = null, processed_at = null']]) {
+            const normalized = await db.query(`
+              update public.${table} set status = $1${assignment} where id = $2
+              returning processed_by, processed_at = now() as database_time
+            `, [statuses[0], compatibleId])
+            assert.equal(normalized.rows[0].processed_by, actor)
+            assert.equal(normalized.rows[0].database_time, true)
+          }
+        })
+      }
+    }
   })
 
   await t.test('GPS review is attributed to the actual Admin and Editor may safely resubmit', async () => {
@@ -375,4 +466,38 @@ test('GPS migration retains legacy rows and backfills only known reviewer metada
   await db.exec('alter table public.destinations validate constraint destinations_verification_review_check')
   constraint = await db.query("select convalidated from pg_constraint where conname = 'destinations_verification_review_check'")
   assert.equal(constraint.rows[0].convalidated, true)
+})
+
+test('processing integrity migration preserves historical rows and processor references', async (t) => {
+  const db = new PGlite()
+  t.after(() => db.close())
+  await bootstrap(db)
+  const integrityIndex = migrationNames.indexOf('202611050007_visitor_processing_integrity.sql')
+  assert.ok(integrityIndex > 0)
+  await applyMigrations(db, 0, integrityIndex)
+  await createUsers(db)
+  const destinationId = (await db.query('select id from public.destinations limit 1')).rows[0].id
+  const snapshots = new Map()
+  for (const [table, status, actor] of [
+    ['reservations', 'completed', users.admin],
+    ['contact_messages', 'archived', users.editor],
+  ]) {
+    await createVisitorRecord(db, table, destinationId, { status, processedBy: actor, processedAt: '2000-01-01T00:00:00Z' })
+    await createVisitorRecord(db, table, destinationId)
+    await createVisitorRecord(db, table, destinationId, { status, processedAt: '2099-01-01T00:00:00Z' })
+    snapshots.set(table, (await db.query(`select * from public.${table} order by id`)).rows)
+  }
+  await applyMigrations(db, integrityIndex)
+  for (const [table, snapshot] of snapshots) {
+    assert.deepEqual((await db.query(`select * from public.${table} order by id`)).rows, snapshot)
+  }
+  for (const actor of [users.admin, users.editor]) {
+    await assert.rejects(() => db.query('delete from auth.users where id = $1', [actor]),
+      (error) => error.code === '23514' && /hanya dapat berubah/.test(error.message))
+    assert.equal((await db.query('select id from auth.users where id = $1', [actor])).rows.length, 1)
+    assert.equal((await db.query('select id from public.profiles where id = $1', [actor])).rows.length, 1)
+  }
+  for (const [table, snapshot] of snapshots) {
+    assert.deepEqual((await db.query(`select * from public.${table} order by id`)).rows, snapshot)
+  }
 })
