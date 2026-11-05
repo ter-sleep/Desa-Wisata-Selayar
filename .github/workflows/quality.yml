@@ -41,16 +41,7 @@ jobs:
           version: 3.0.0
       - name: Start disposable local Supabase
         shell: bash
-        run: |
-          set -euo pipefail
-          umask 077
-          supabase init
-          if ! supabase start -x realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor >"$RUNNER_TEMP/dewis-supabase-start.log" 2>&1; then
-            echo "::error::The local Supabase stack failed to start. Container output is withheld because it may contain local credentials."
-            sed -nE 's/^(Applying migration [[:alnum:]_.-]+).*/\1/p' "$RUNNER_TEMP/dewis-supabase-start.log"
-            docker ps -a --format 'table {{.Names}}\t{{.Status}}'
-            exit 1
-          fi
+        run: bash .github/scripts/start-disposable-supabase.sh
       - name: Test real local Supabase services
         shell: bash
         run: |
