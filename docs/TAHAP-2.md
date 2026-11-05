@@ -2,6 +2,8 @@
 
 Tahap ini menyiapkan integrasi Supabase untuk aplikasi Next.js 16 App Router.
 
+> Dokumen ini menjelaskan fondasi Tahap 2. Kondisi akhir memerlukan seluruh migration 001–006: bucket menjadi privat pada 003, dan reservasi/kontak publik memakai RPC sejak 005. Lihat README untuk urutan terkini.
+
 ## Yang ditambahkan
 
 - `@supabase/supabase-js` dan `@supabase/ssr` pada `package.json`.
@@ -18,10 +20,10 @@ Tahap ini menyiapkan integrasi Supabase untuk aplikasi Next.js 16 App Router.
 Pada folder proyek, jalankan:
 
 ```bash
-corepack pnpm install --no-frozen-lockfile
+pnpm install --frozen-lockfile
 ```
 
-Perintah pertama ini juga akan menyinkronkan `pnpm-lock.yaml` dengan penambahan paket Supabase di `package.json`. Setelah lockfile tersinkron, gunakan `corepack pnpm install --frozen-lockfile` pada instalasi/CI berikutnya.
+Lockfile sudah mencakup dependency Supabase. Gunakan Node.js 22+ dan pnpm versi pada `package.json`.
 
 ## 2. Buat proyek Supabase
 
@@ -111,7 +113,7 @@ Setelah itu buka `/login` pada website dan masuk menggunakan akun tersebut.
 ## 5. Jalankan aplikasi
 
 ```bash
-corepack pnpm dev
+pnpm dev
 ```
 
 Alamat lokal:
@@ -123,8 +125,10 @@ Alamat lokal:
 Pemeriksaan kode:
 
 ```bash
-corepack pnpm typecheck
-corepack pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
 ## 6. Pemeriksaan keamanan dasar
@@ -134,14 +138,14 @@ corepack pnpm build
 - Coba akses `/admin` dalam keadaan logout; seharusnya diarahkan ke `/login`.
 - Login dengan akun `visitor`; akun harus ditolak dari dashboard.
 - Coba baca tabel `reservations` sebagai `anon`; operasi select harus ditolak/tidak mengembalikan data.
-- Uji insert reservasi publik; hanya kolom yang diizinkan dan status awal `pending` yang dapat dibuat.
+- Uji RPC reservasi publik setelah migration 005–006; insert tabel langsung harus ditolak dan status awal harus `pending`.
 - Uji pembacaan destinasi sebagai `anon`; hanya baris `publication_status = 'published'` yang terlihat.
 - Pastikan `.env.local` tidak masuk ke Git.
 
 ## Catatan keamanan dan batasan
 
 - Kunci `service_role` sengaja tidak digunakan. Aplikasi menggunakan publishable key dan RLS.
-- Bucket `destination-media` diset public karena file pada bucket tersebut diasumsikan merupakan dokumentasi wisata yang memang boleh ditampilkan ke pengunjung. Jangan menyimpan dokumen identitas, file internal, atau media rahasia pada bucket ini.
+- Migration 001 semula membuat bucket public; migration 003 menjadikannya private dan membatasi akses media terbit. Jangan menyimpan dokumen identitas, file internal, atau media rahasia pada bucket ini.
 - Formulir reservasi dan kontak sudah mempunyai batasan kolom serta status awal di database, tetapi proteksi anti-spam/rate-limit dan CAPTCHA belum dibuat. Itu perlu ditambahkan sebelum website dibuka untuk trafik publik.
 - Tahap ini belum mengimplementasikan UI CRUD destinasi, upload gambar, pengelolaan reservasi, maupun manajemen role dari dashboard. Hal tersebut masuk tahap pengembangan fitur berikutnya.
 - Data destinasi statis belum otomatis dimigrasikan. Pemindahan data dilakukan setelah field dan data sumber diperiksa pada Tahap 3 agar konten yang belum terverifikasi tidak ikut dipublikasikan.

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireStaffProfile } from '@/lib/auth/permissions'
+import { recordAudit } from '@/lib/audit'
 import { createClient } from '@/lib/supabase/server'
 
 function value(formData: FormData, key: string) {
@@ -29,7 +30,7 @@ export async function savePublicContactSettings(formData: FormData) {
   const { error } = await supabase.from('site_settings').upsert(entries, { onConflict: 'key' })
   if (error) redirect(`/admin/pengaturan?error=${encodeURIComponent(`Pengaturan gagal disimpan: ${error.message}`)}`)
 
-  await supabase.from('audit_logs').insert({
+  await recordAudit(supabase, {
     user_id: profile.id,
     action: 'site_settings.contact_updated',
     entity_table: 'site_settings',

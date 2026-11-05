@@ -1,6 +1,7 @@
 import { ArrowUpRight, CheckCircle2, MessageCircle, Send } from 'lucide-react'
 import { Footer, Header, PageIntro } from '@/components/site'
-import { getPublicContactSettings, toWhatsAppDigits } from '@/lib/queries/contact-settings'
+import { getPublicContactSettings } from '@/lib/queries/contact-settings'
+import { toWhatsAppDigits } from '@/lib/visitor-rules'
 import { submitContactMessage } from '@/lib/actions/public-submissions'
 
 export const dynamic = 'force-dynamic'

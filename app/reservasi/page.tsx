@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { CalendarDays, CheckCircle2, ClipboardCheck, MessageCircle } from 'lucide-react'
-import { Footer, Header, PageIntro, Notice } from '@/components/site'
+import { Footer, Header, PageIntro } from '@/components/site'
 import { createClient } from '@/lib/supabase/server'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 import { submitReservation } from '@/lib/actions/public-submissions'

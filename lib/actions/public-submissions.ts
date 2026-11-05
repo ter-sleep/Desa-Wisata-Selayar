@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
+import { isValidVisitDate, isValidWhatsApp } from '@/lib/visitor-rules'
 
 function text(formData: FormData, key: string) {
   const value = formData.get(key)
@@ -49,11 +50,11 @@ export async function submitReservation(formData: FormData) {
   }
   if (visitorName.length < 2 || visitorName.length > 120) reservationError('Nama harus terdiri dari 2–120 karakter.')
   if (!validEmail(email)) reservationError('Format email tidak valid.')
-  if (whatsapp.replace(/[^0-9+]/g, '').length < 8 || whatsapp.replace(/[^0-9+]/g, '').length > 20) {
+  if (!isValidWhatsApp(whatsapp)) {
     reservationError('Masukkan nomor WhatsApp yang valid, termasuk kode negara bila diperlukan.')
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || visitDate < localTodayMakassar()) {
-    reservationError('Pilih tanggal kunjungan hari ini atau tanggal mendatang.')
+  if (!isValidVisitDate(visitDate, localTodayMakassar())) {
+    reservationError('Pilih tanggal kunjungan yang valid, hari ini atau tanggal mendatang.')
   }
   const participants = Number(participantText)
   if (!Number.isInteger(participants) || participants < 1 || participants > 500) {

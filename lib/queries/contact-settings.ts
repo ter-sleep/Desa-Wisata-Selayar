@@ -18,18 +18,10 @@ export async function getPublicContactSettings(): Promise<PublicContactSettings>
     .in('key', ['whatsapp_number', 'public_address'])
     .eq('is_public', true)
 
-  if (error) return { whatsappNumber: '', publicAddress: '' }
+  if (error) throw new Error(`Gagal mengambil pengaturan kontak: ${error.message}`)
   const values = new Map((data || []).map((row) => [row.key, row.value] as const))
   return {
     whatsappNumber: jsonString(values.get('whatsapp_number')),
     publicAddress: jsonString(values.get('public_address')),
   }
-}
-
-export function toWhatsAppDigits(value: string): string {
-  const digits = value.replace(/\D/g, '')
-  if (!digits) return ''
-  if (digits.startsWith('0')) return `62${digits.slice(1)}`
-  if (digits.startsWith('8')) return `62${digits}`
-  return digits
 }

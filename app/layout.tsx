@@ -8,23 +8,6 @@ export const metadata: Metadata = {
   title: 'Bontomarannu — Desa Wisata Selayar',
   description: 'Temukan alam, telusuri sejarah, dan kenali Desa Wisata Bontomarannu di Kepulauan Selayar.',
   generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
 }
 
 export const viewport: Viewport = {

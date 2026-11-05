@@ -33,13 +33,22 @@ async function signMediaPaths(
     .createSignedUrls(paths, SIGNED_URL_TTL_SECONDS)
 
   if (error || !data) {
-    return new Map<string, string>(paths.map((path) => [path, '/images/destination-placeholder.svg'] as const))
+    throw new Error(`Gagal membuat URL foto: ${error?.message || 'respons Storage kosong'}`)
   }
 
-  return new Map<string, string>(rows.map((row, index) => [
-    row.storage_path,
-    data[index]?.signedUrl || '/images/destination-placeholder.svg',
-  ] as const))
+  const urls = new Map<string, string>()
+  for (const [index, row] of rows.entries()) {
+    const url = data[index]?.signedUrl
+    if (!url) throw new Error('Gagal membuat URL untuk salah satu foto di Storage.')
+    urls.set(row.storage_path, url)
+  }
+  return urls
+}
+
+function signedMediaUrl(urls: Map<string, string>, path: string): string {
+  const url = urls.get(path)
+  if (!url) throw new Error('URL foto tidak tersedia.')
+  return url
 }
 
 export async function getPublicGalleryMedia(limit = 120): Promise<GalleryMediaItem[]> {
@@ -75,7 +84,7 @@ export async function getPublicGalleryMedia(limit = 120): Promise<GalleryMediaIt
     if (!destination) return []
     return [{
       ...row,
-      image_url: urls.get(row.storage_path) || '/images/destination-placeholder.svg',
+      image_url: signedMediaUrl(urls, row.storage_path),
       destination_name: destination.name,
       destination_slug: destination.slug,
     }]
@@ -108,7 +117,7 @@ export async function getPublicMediaForDestination(destinationSlug: string): Pro
   const urls = await signMediaPaths(supabase, rows)
   return rows.map((row) => ({
     ...row,
-    image_url: urls.get(row.storage_path) || '/images/destination-placeholder.svg',
+    image_url: signedMediaUrl(urls, row.storage_path),
     destination_name: destination.name,
     destination_slug: destination.slug,
   }))
@@ -141,7 +150,7 @@ export async function getAdminGalleryData() {
     if (!destination) return []
     return [{
       ...row,
-      image_url: urls.get(row.storage_path) || '/images/destination-placeholder.svg',
+      image_url: signedMediaUrl(urls, row.storage_path),
       destination_name: destination.name,
       destination_slug: destination.slug,
     }]
@@ -166,10 +175,8 @@ export async function getPublicCoverImageUrls(destinationIds: string[]) {
   if (error) throw new Error(`Gagal mengambil foto sampul: ${error.message}`)
   const rows = (data || []) as MediaRow[]
   const urls = await signMediaPaths(supabase, rows)
-  return new Map<string, string>(rows.flatMap((row) => {
-    const signedUrl = urls.get(row.storage_path)
-    return signedUrl && signedUrl !== '/images/destination-placeholder.svg'
-      ? [[row.destination_id, signedUrl] as const]
-      : []
-  }))
+  return new Map<string, string>(rows.map((row) => [
+    row.destination_id,
+    signedMediaUrl(urls, row.storage_path),
+  ] as const))
 }

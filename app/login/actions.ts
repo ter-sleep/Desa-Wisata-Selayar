@@ -10,6 +10,11 @@ function getText(formData: FormData, key: string): string {
   return typeof value === 'string' ? value : ''
 }
 
+async function clearRejectedSession(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { error } = await supabase.auth.signOut({ scope: 'local' })
+  if (error) redirect('/login?error=sign-out')
+}
+
 export async function signIn(formData: FormData) {
   if (!isSupabaseConfigured()) redirect('/login?error=setup')
 
@@ -27,7 +32,7 @@ export async function signIn(formData: FormData) {
   const userId = claimsData?.claims?.sub
 
   if (claimsError || typeof userId !== 'string' || !userId) {
-    await supabase.auth.signOut()
+    await clearRejectedSession(supabase)
     redirect('/login?error=unauthorized')
   }
 
@@ -39,7 +44,7 @@ export async function signIn(formData: FormData) {
 
   const role = profile?.role as StaffRole | undefined
   if (profileError || !profile || !profile.is_active || !role || !STAFF_ROLES.includes(role)) {
-    await supabase.auth.signOut()
+    await clearRejectedSession(supabase)
     redirect('/login?error=unauthorized')
   }
 
@@ -49,7 +54,8 @@ export async function signIn(formData: FormData) {
 export async function signOut() {
   if (isSupabaseConfigured()) {
     const supabase = await createClient()
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) redirect('/login?error=sign-out')
   }
   redirect('/login?status=signed-out')
 }

@@ -1,25 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const FALLBACK_IMAGE = '/images/destination-placeholder.svg'
 
-export function DestinationImage({
-  src,
-  alt,
-  className,
-  loading = 'lazy',
-}: {
+type DestinationImageProps = {
   src: string
   alt: string
   className?: string
   loading?: 'eager' | 'lazy'
-}) {
-  const [currentSrc, setCurrentSrc] = useState(src || FALLBACK_IMAGE)
+}
 
-  useEffect(() => {
-    setCurrentSrc(src || FALLBACK_IMAGE)
-  }, [src])
+export function DestinationImage(props: DestinationImageProps) {
+  return <ImageWithFallback key={props.src} {...props} />
+}
+
+function ImageWithFallback({
+  src,
+  alt,
+  className,
+  loading = 'lazy',
+}: DestinationImageProps) {
+  const [currentSrc, setCurrentSrc] = useState(src || FALLBACK_IMAGE)
 
   return (
     <img

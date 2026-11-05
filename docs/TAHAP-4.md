@@ -29,6 +29,7 @@ Kebijakan baca Storage:
 - Upload, update, dan delete hanya untuk staf.
 
 Signed URL yang dibuat aplikasi berlaku 1 jam. URL tersebut merupakan URL sementara, bukan URL publik permanen.
+Jika foto dibatalkan publikasinya, signed URL yang sudah diterbitkan dapat tetap bekerja sampai kedaluwarsa; jangan gunakan mekanisme ini untuk dokumen rahasia.
 
 ## File penting
 
@@ -68,4 +69,5 @@ Jangan mengunggah foto yang tidak memiliki izin penggunaan. Isi kolom kredit/sum
 - Upload dilakukan satu file per permintaan untuk menjaga ukuran request dan penanganan kegagalan tetap sederhana.
 - Tidak ada resize/thumbnail otomatis. Untuk produksi dengan foto beresolusi besar, tahap optimasi gambar dapat ditambahkan.
 - URL bertanda tangan berlaku 1 jam. Cache objek juga dibatasi 1 jam; halaman dirender dinamis agar URL baru dapat dibuat saat halaman diminta. Link yang sudah diterbitkan tidak bisa dicabut satu per satu dan mungkin masih dapat diakses melalui cache sampai masa cache berakhir. File yang sudah diunduh pengunjung tentu tidak dapat ditarik kembali.
+- Bila penetapan sampul gagal setelah upload berhasil, foto tetap disimpan di galeri dan pesan kesalahan meminta operator memperbaiki sampul; kegagalan membersihkan objek yatim juga dilaporkan.
 - Migrasi Supabase dan uji integrasi nyata harus dilakukan di proyek Supabase milik pemilik website.
