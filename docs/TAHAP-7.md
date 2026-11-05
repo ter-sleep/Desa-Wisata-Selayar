@@ -61,7 +61,9 @@ Peta kini memakai miniatur Three.js bergaya diorama sebagai pilihan pertama dan 
 | Tema, bahasa, dan posisi | Tema mengubah material tanpa mereset kamera; label/kontrol berubah bahasa. Posisi perangkat simulasi tetap tersedia antar-mode dan tidak menghasilkan pin destinasi; pengulangan lokasi tidak menggandakan label. |
 | Responsive | 16 kombinasi kedua mode pada viewport browsing-context 320, 375, 768, dan 1440 px, dalam Indonesia/siang dan English/malam, tidak memiliki overflow horizontal. Ukuran judul kartu miniatur tetap 29 px. |
 | Pemulihan | HTTP 503 aset wilayah menampilkan error dan retry berhasil. WebGL2 yang dinonaktifkan menawarkan satelit. Kehilangan konteks grafis menonaktifkan kontrol; retry mempertahankan kamera dengan satu canvas tanpa duplikasi label. |
-| Supabase services | Job integrasi nyata tetap dijalankan melalui workflow GitHub Actions pada branch fitur; Docker tidak tersedia pada host Windows ini. Hasil per-commit dicatat pada workflow, bukan dianggap diuji pada proyek hosted. |
+| Supabase services | Berhasil di GitHub Actions: 9 test/subtest integrasi nyata pada stack sementara, termasuk Server Actions dan metadata pemrosesan kedua tabel pengunjung. Docker tidak tersedia pada host Windows ini; bukan pengujian proyek hosted. |
+
+Commit implementasi `29b4efe42c840a09cbfaf455eea9da766e23092b` juga lulus kedua job pada [Quality checks #42050400265](https://github.com/ter-sleep/Desa-Wisata-Selayar/actions/runs/42050400265): lint, typecheck, production build, dan total **51 test** (20 unit + 21 database/config/startup + 1 HTTP + 9 integrasi Supabase), tanpa failure atau skip. Perubahan hanya dipush ke `feature/dewis-stage-6-baseline`; tidak ada perubahan `main`, merge PR, atau deployment oleh sesi ini.
 
 Harness unit `tsx` pada proyek CommonJS menampilkan deprecation warning Three.js untuk pemuatan CommonJS; test tetap berhasil. Source renderer memakai import ES module dan production bundle Next.js berhasil. Tinjau kompatibilitas harness saat meningkatkan Three.js; warning ini tidak disembunyikan.
 
