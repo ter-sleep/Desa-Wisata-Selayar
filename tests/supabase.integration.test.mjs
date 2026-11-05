@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { randomBytes, randomUUID } from 'node:crypto'
 import test from 'node:test'
 import { createClient } from '@supabase/supabase-js'
+import { testAppFlows } from './supabase-app-flow.mjs'
 import { localOnlyFetch, readLocalSupabaseConfig } from './supabase-local-config.mjs'
 
 const config = await readLocalSupabaseConfig(process.env.DEWIS_SUPABASE_STATUS_FILE)
@@ -44,7 +45,7 @@ function client(key = config.anonKey) {
   })
 }
 
-test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 180000 }, async (t) => {
+test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 240000 }, async (t) => {
   const service = client(config.serviceKey)
   const anon = client()
   const marker = randomUUID()
@@ -63,7 +64,16 @@ test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 180000 }
         errors.push(`${label}: ${safeMessage(error)}`)
       }
     }
-    if (fixture.paths.length) await clean('Storage cleanup', service.storage.from(bucket).remove(fixture.paths))
+    for (const id of fixture.destinationIds) {
+      const listed = await service.storage.from(bucket).list(id, { limit: 100 })
+      if (listed.error) errors.push(`Storage listing: ${safeMessage(listed.error)}`)
+      else {
+        for (const object of listed.data) {
+          if (object.id && /^[a-z0-9.-]+$/i.test(object.name)) fixture.paths.push(`${id}/${object.name}`)
+        }
+      }
+    }
+    if (fixture.paths.length) await clean('Storage cleanup', service.storage.from(bucket).remove([...new Set(fixture.paths)]))
     for (const id of fixture.destinationIds) {
       await clean('Reservation cleanup', service.from('reservations').delete().eq('destination_id', id))
     }
@@ -71,6 +81,9 @@ test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 180000 }
     await clean('Settings cleanup', service.from('site_settings').delete().eq('key', fixture.setting))
     for (const id of fixture.destinationIds) {
       await clean('Destination cleanup', service.from('destinations').delete().eq('id', id))
+    }
+    if (fixture.userIds.length) {
+      await clean('Audit cleanup', service.from('audit_logs').delete().in('user_id', fixture.userIds))
     }
     for (const id of fixture.userIds) await clean('Auth cleanup', service.auth.admin.deleteUser(id))
     if (errors.length) throw new Error(errors.join('; '))
@@ -350,6 +363,10 @@ test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 180000 }
     assert.equal((await localFetch(signed.signedUrl)).status, 200, 'Previously signed URLs remain valid until expiry')
     requireData(await editor.storage.from(bucket).remove([privatePath]), 'Delete private image')
     assert.ok((await editor.storage.from(bucket).download(privatePath)).error, 'Deleted image must not be readable')
+  })
+
+  await t.test('Next.js forms and sessions work with the local Supabase services', { timeout: 180000 }, async (appTest) => {
+    await testAppFlows(appTest, { config, users, password, service, fixture, png, requireData, safeMessage, createDestination })
   })
 
   await t.test('Logout ends the authenticated session', async () => {

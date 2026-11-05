@@ -12,7 +12,7 @@
     "test:unit": "tsx --test tests/visitor-rules.test.ts tests/gps-rules.test.ts tests/media-rules.test.ts tests/ui-state.test.tsx",
     "test:db": "node --test tests/database.test.mjs tests/supabase-local-config.test.mjs",
     "test:http": "node --test --test-force-exit tests/http.test.mjs",
-    "test:supabase": "node --test tests/supabase.integration.test.mjs",
+    "test:supabase": "node --test --test-force-exit tests/supabase.integration.test.mjs",
     "test": "pnpm test:unit && pnpm test:db && pnpm test:http",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
