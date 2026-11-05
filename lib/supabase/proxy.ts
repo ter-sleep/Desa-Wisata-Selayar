@@ -6,7 +6,15 @@ import { getSupabasePublicEnv } from './env'
 
 export async function updateSession(request: NextRequest) {
   const env = getSupabasePublicEnv()
-  if (!env) return NextResponse.next({ request })
+  if (!env) {
+    if (request.nextUrl.pathname === '/admin' || request.nextUrl.pathname.startsWith('/admin/')) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.search = '?error=setup'
+      return NextResponse.redirect(loginUrl)
+    }
+    return NextResponse.next({ request })
+  }
 
   let response = NextResponse.next({ request })
 

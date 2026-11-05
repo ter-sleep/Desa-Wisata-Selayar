@@ -2,6 +2,7 @@ import 'server-only'
 
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 import { createClient } from '@/lib/supabase/server'
+import { hasVerifiedCoordinates } from '@/lib/gps-rules'
 import { destinations as fallbackDestinations, type Destination } from '@/lib/site-data'
 import type { Database } from '@/types/database'
 import { getPublicCoverImageUrls } from '@/lib/queries/media'
@@ -10,7 +11,7 @@ type DestinationRow = Database['public']['Tables']['destinations']['Row']
 
 function mapDestination(row: DestinationRow, coverImage?: string): Destination {
   const coordinates =
-    row.verification_status === 'verified' && row.latitude !== null && row.longitude !== null
+    hasVerifiedCoordinates(row)
       ? {
           latitude: Number(row.latitude),
           longitude: Number(row.longitude),

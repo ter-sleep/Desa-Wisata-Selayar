@@ -53,6 +53,7 @@ export type Database = {
     Views: Record<string, never>
     Functions: {
       current_app_role: { Args: Record<PropertyKey, never>; Returns: AppRole | null }
+      set_destination_media_cover: { Args: { p_media_id: string }; Returns: undefined }
       submit_public_reservation: { Args: { p_destination_id: string; p_visitor_name: string; p_email: string | null; p_whatsapp: string; p_visit_date: string; p_participant_count: number; p_visitor_notes: string | null; p_privacy_consent: boolean }; Returns: { booking_code: string }[] }
       submit_public_contact_message: { Args: { p_visitor_name: string; p_email: string | null; p_phone: string | null; p_subject: string | null; p_message: string; p_privacy_consent: boolean }; Returns: boolean }
     }

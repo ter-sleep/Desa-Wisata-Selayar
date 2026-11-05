@@ -10,7 +10,7 @@ Tahap ini menambahkan alur pencatatan titik geografis destinasi, pemeriksaan adm
 - Pemilihan koordinat manual dengan klik pada peta OpenStreetMap.
 - Input latitude/longitude manual dan pemilihan sumber: GPS perangkat, pin peta, atau referensi eksternal.
 - Pencatatan akurasi GPS (meter), metode, sumber/catatan, waktu pengambilan, dan pengelola yang mencatat.
-- Setiap perubahan koordinat otomatis mengembalikan status verifikasi ke `pending`.
+- Setiap penyimpanan ulang atau perubahan koordinat otomatis mengembalikan status verifikasi ke `pending`.
 - Hanya Admin dan Super Admin dapat memverifikasi atau menolak koordinat; Editor hanya dapat mengusulkan/memperbarui koordinat.
 - Trigger PostgreSQL mencegah Editor mengubah status/metadata verifikasi melalui REST API langsung, baik pada INSERT maupun UPDATE.
 - Audit log untuk pembaruan, verifikasi, penolakan, dan penghapusan koordinat.
@@ -40,7 +40,8 @@ Kolom lama `latitude`, `longitude`, `gps_accuracy_m`, `coordinate_source`, `veri
 5. Sumber koordinat wajib diisi.
 6. Setiap perubahan nilai koordinat, akurasi, metode, atau sumber akan mengatur status menjadi `pending`, mencatat waktu perubahan di database, mencatat akun yang sedang login, dan menghapus jejak verifikasi lama.
 7. Status `verified` hanya dapat ditetapkan Admin atau Super Admin dan wajib memiliki catatan waktu serta identitas pemeriksa.
-8. Status GPS `verified` saja belum cukup untuk tampil di peta publik: destinasi juga harus `published`.
+8. Status GPS `verified` saja belum cukup untuk tampil di peta publik: destinasi juga harus `published`, dan identitas serta waktu verifikasi/pemeriksaan harus lengkap.
+9. Migration 006 memperbaiki agar Editor tetap dapat mengedit konten biasa pada destinasi terverifikasi dan atribusi pemeriksa ditetapkan dari akun Admin yang aktif.
 
 ## Pusat tampilan peta picker
 
@@ -52,8 +53,8 @@ Peta pemilih koordinat menggunakan pusat tampilan awal perkiraan Desa Bontomaran
 2. Pastikan migration Tahap 2 dan Tahap 3 telah dijalankan.
 3. Pastikan migration Tahap 4 sudah dijalankan jika menggunakan galeri.
 4. Jalankan `supabase/migrations/202611040004_gps_management.sql` pada Supabase SQL Editor.
-5. Jalankan `corepack pnpm install --no-frozen-lockfile` bila dependensi belum terpasang.
-6. Jalankan `corepack pnpm typecheck`, `corepack pnpm build`, lalu `corepack pnpm dev`.
+5. Jalankan migration yang tersisa hingga 006, lalu `pnpm install --frozen-lockfile`.
+6. Jalankan `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, lalu `pnpm dev`.
 7. Login sebagai staf dan buka `/admin/peta`.
 8. Buka salah satu destinasi, pilih koordinat melalui GPS perangkat saat berada di lokasi atau pin peta, lengkapi sumber koordinat, kemudian simpan.
 9. Login sebagai Admin/Super Admin untuk memeriksa koordinat dan memberi catatan minimal 5 karakter.

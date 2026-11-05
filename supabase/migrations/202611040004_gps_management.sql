@@ -26,6 +26,15 @@ alter table public.destinations
 
 alter table public.destinations
   drop constraint if exists destinations_verification_review_check;
+
+-- Rekam ulang atribut pemeriksa yang memang sudah tersedia pada data Tahap 2.
+-- Baris lama tanpa atribut lengkap dipertahankan untuk ditinjau pengelola.
+update public.destinations
+set reviewed_at = verified_at, reviewed_by = verified_by
+where verification_status = 'verified'
+  and verified_at is not null and verified_by is not null
+  and reviewed_at is null and reviewed_by is null;
+
 alter table public.destinations
   add constraint destinations_verification_review_check
   check (
@@ -34,7 +43,16 @@ alter table public.destinations
       and reviewed_at is not null and reviewed_by is not null)
     or (verification_status = 'rejected' and reviewed_at is not null and reviewed_by is not null)
     or (verification_status = 'pending' and verified_at is null and verified_by is null)
-  );
+  ) not valid;
+
+do $$
+begin
+  alter table public.destinations validate constraint destinations_verification_review_check;
+exception
+  when check_violation then
+    raise warning 'Data GPS lama memiliki atribut pemeriksaan yang belum lengkap; tinjau sebelum memvalidasi constraint.';
+end;
+$$;
 
 create index if not exists destinations_gps_public_idx
   on public.destinations (verification_status, publication_status)

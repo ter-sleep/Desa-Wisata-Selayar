@@ -64,7 +64,7 @@ export function DestinationForm({
         <label className="admin-field admin-field-full">
           <span>URL gambar utama</span>
           <input name="image_url" type="text" defaultValue={initial?.imageUrl || initial?.image || ''} placeholder="https://..." />
-          <small>Untuk sementara gunakan URL gambar HTTP(S). Upload foto langsung akan dibuat pada Tahap 4.</small>
+          <small>Gunakan URL HTTP(S) atau path lokal. Foto sampul juga dapat diatur melalui menu Galeri.</small>
         </label>
         <label className="admin-field">
           <span>Status informasi</span>
@@ -104,7 +104,7 @@ export function DestinationForm({
       {isEdit && (
         <div className="admin-coordinate-note">
           <strong>Data koordinat GPS tidak diubah pada formulir ini.</strong>
-          <span>Pengelolaan titik dan verifikasi GPS akan ditangani pada Tahap 5 agar koordinat tidak terisi berdasarkan perkiraan.</span>
+          <span>Gunakan menu GPS untuk mengelola dan memverifikasi titik berdasarkan sumber yang dapat diperiksa.</span>
         </div>
       )}
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireStaffProfile } from '@/lib/auth/permissions'
+import { recordAudit } from '@/lib/audit'
 import { createClient } from '@/lib/supabase/server'
 import type { CoordinateMethod } from '@/types/database'
 
@@ -35,7 +36,7 @@ async function auditGps(
   summary: string,
   metadata: Record<string, string | number | null> = {},
 ) {
-  await supabase.from('audit_logs').insert({
+  await recordAudit(supabase, {
     user_id: userId,
     action,
     entity_table: 'destinations',
@@ -48,7 +49,12 @@ async function auditGps(
 function gpsError(message: string, id?: string): never {
   const path = id ? `/admin/peta/${encodeURIComponent(id)}` : '/admin/peta'
   redirect(`${path}?error=${encodeURIComponent(message)}`)
-  throw new Error(message)
+}
+
+function expectedRevision(formData: FormData, id: string): string {
+  const updatedAt = value(formData, 'updated_at')
+  if (!updatedAt) gpsError('Versi data destinasi tidak tersedia. Muat ulang halaman.', id)
+  return updatedAt
 }
 
 export async function saveDestinationCoordinates(formData: FormData) {
@@ -61,6 +67,7 @@ export async function saveDestinationCoordinates(formData: FormData) {
   const method = value(formData, 'coordinate_method') as CoordinateMethod
 
   if (!isUuid(id)) gpsError('ID destinasi tidak valid.')
+  const updatedAt = expectedRevision(formData, id)
   if (!latitudeText || !longitudeText) gpsError('Latitude dan longitude wajib diisi.', id)
 
   const latitude = Number(latitudeText)
@@ -87,13 +94,14 @@ export async function saveDestinationCoordinates(formData: FormData) {
   const supabase = await createClient()
   const { data: destination, error: lookupError } = await supabase
     .from('destinations')
-    .select('id, name')
+    .select('id, name, updated_at')
     .eq('id', id)
     .maybeSingle()
 
   if (lookupError || !destination) gpsError('Destinasi tidak ditemukan atau tidak dapat diakses.', id)
+  if (destination.updated_at !== updatedAt) gpsError('Data destinasi sudah berubah. Muat ulang sebelum mencoba kembali.', id)
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('destinations')
     .update({
       latitude,
@@ -103,11 +111,15 @@ export async function saveDestinationCoordinates(formData: FormData) {
       coordinate_method: method,
       coordinate_captured_at: new Date().toISOString(),
       coordinate_updated_by: profile.id,
-      // Trigger database akan mengembalikan status ke pending setiap kali titik berubah.
+      verification_status: 'pending',
     })
     .eq('id', id)
+    .eq('updated_at', updatedAt)
+    .select('id')
+    .maybeSingle()
 
   if (error) gpsError(`Koordinat gagal disimpan: ${error.message}`, id)
+  if (!updated) gpsError('Data destinasi sudah berubah. Muat ulang sebelum mencoba kembali.', id)
 
   await auditGps(
     supabase,
@@ -132,6 +144,7 @@ export async function reviewDestinationCoordinates(formData: FormData) {
   const decision = value(formData, 'decision')
   const note = value(formData, 'verification_note')
   if (!isUuid(id)) gpsError('ID destinasi tidak valid.')
+  const updatedAt = expectedRevision(formData, id)
   if (decision !== 'verified' && decision !== 'rejected') gpsError('Keputusan verifikasi tidak valid.', id)
   if (note.length < 5 || note.length > 1000) {
     gpsError('Catatan pemeriksaan wajib diisi (5–1.000 karakter).', id)
@@ -140,17 +153,18 @@ export async function reviewDestinationCoordinates(formData: FormData) {
   const supabase = await createClient()
   const { data: destination, error: lookupError } = await supabase
     .from('destinations')
-    .select('id, name, latitude, longitude')
+    .select('id, name, latitude, longitude, updated_at')
     .eq('id', id)
     .maybeSingle()
 
   if (lookupError || !destination) gpsError('Destinasi tidak ditemukan.', id)
+  if (destination.updated_at !== updatedAt) gpsError('Data destinasi sudah berubah. Muat ulang sebelum mencoba kembali.', id)
   if (destination.latitude === null || destination.longitude === null) {
     gpsError('Masukkan koordinat terlebih dahulu sebelum melakukan verifikasi.', id)
   }
 
   const now = new Date().toISOString()
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('destinations')
     .update({
       verification_status: decision,
@@ -161,8 +175,12 @@ export async function reviewDestinationCoordinates(formData: FormData) {
       verified_by: decision === 'verified' ? profile.id : null,
     })
     .eq('id', id)
+    .eq('updated_at', updatedAt)
+    .select('id')
+    .maybeSingle()
 
   if (error) gpsError(`Pemeriksaan koordinat gagal disimpan: ${error.message}`, id)
+  if (!updated) gpsError('Data destinasi sudah berubah. Muat ulang sebelum mencoba kembali.', id)
 
   await auditGps(
     supabase,
@@ -181,16 +199,18 @@ export async function clearDestinationCoordinates(formData: FormData) {
   const profile = await requireStaffProfile()
   const id = value(formData, 'id')
   if (!isUuid(id)) gpsError('ID destinasi tidak valid.')
+  const updatedAt = expectedRevision(formData, id)
 
   const supabase = await createClient()
   const { data: destination, error: lookupError } = await supabase
     .from('destinations')
-    .select('id, name')
+    .select('id, name, updated_at')
     .eq('id', id)
     .maybeSingle()
   if (lookupError || !destination) gpsError('Destinasi tidak ditemukan.', id)
+  if (destination.updated_at !== updatedAt) gpsError('Data destinasi sudah berubah. Muat ulang sebelum mencoba kembali.', id)
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from('destinations')
     .update({
       latitude: null,
@@ -202,8 +222,12 @@ export async function clearDestinationCoordinates(formData: FormData) {
       coordinate_updated_by: profile.id,
     })
     .eq('id', id)
+    .eq('updated_at', updatedAt)
+    .select('id')
+    .maybeSingle()
 
   if (error) gpsError(`Koordinat gagal dihapus: ${error.message}`, id)
+  if (!updated) gpsError('Data destinasi sudah berubah. Muat ulang sebelum mencoba kembali.', id)
   await auditGps(supabase, profile.id, 'destination.gps_cleared', id, `Menghapus koordinat ${destination.name}`)
   refreshGpsPages()
   redirect(`/admin/peta/${encodeURIComponent(id)}?status=cleared`)

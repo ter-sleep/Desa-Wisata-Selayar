@@ -8,6 +8,7 @@ const errorMessages: Record<string, string> = {
   'invalid-input': 'Masukkan email dan kata sandi.',
   'invalid-credentials': 'Email atau kata sandi tidak cocok.',
   unauthorized: 'Akun ini belum memiliki akses pengelola atau sedang dinonaktifkan.',
+  'sign-out': 'Logout belum berhasil. Silakan coba kembali dari dashboard.',
 }
 
 export function LoginForm({ error, status, configured }: { error?: string; status?: string; configured: boolean }) {

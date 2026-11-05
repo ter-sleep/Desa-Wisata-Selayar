@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireStaffProfile } from '@/lib/auth/permissions'
+import { recordAudit } from '@/lib/audit'
 import { createClient } from '@/lib/supabase/server'
 import type { PublicationStatus } from '@/types/database'
 
@@ -111,8 +112,7 @@ async function writeAuditLog(
   entityId: string,
   summary: string,
 ) {
-  // Audit bersifat pendukung; kegagalannya tidak membatalkan perubahan data utama.
-  await supabase.from('audit_logs').insert({
+  await recordAudit(supabase, {
     user_id: userId,
     action,
     entity_table: 'destinations',
@@ -124,7 +124,7 @@ async function writeAuditLog(
 export async function createDestination(formData: FormData) {
   const profile = await requireStaffProfile()
   const parsed = parseDestination(formData)
-  if ('error' in parsed) redirect(`/admin/destinasi/baru?error=${encodeURIComponent(parsed.error)}`)
+  if ('error' in parsed && parsed.error !== undefined) redirect(`/admin/destinasi/baru?error=${encodeURIComponent(parsed.error)}`)
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -151,7 +151,7 @@ export async function updateDestination(formData: FormData) {
   if (!id) redirect('/admin/destinasi?error=ID%20destinasi%20tidak%20valid')
 
   const parsed = parseDestination(formData)
-  if ('error' in parsed) redirect(`/admin/destinasi/${encodeURIComponent(id)}/edit?error=${encodeURIComponent(parsed.error)}`)
+  if ('error' in parsed && parsed.error !== undefined) redirect(`/admin/destinasi/${encodeURIComponent(id)}/edit?error=${encodeURIComponent(parsed.error)}`)
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -198,20 +198,21 @@ export async function deleteDestination(formData: FormData) {
     redirect(`/admin/destinasi?error=${encodeURIComponent(`Daftar foto destinasi gagal dibaca: ${mediaLookupError.message}`)}`)
   }
 
-  const { error } = await supabase.from('destinations').delete().eq('id', id)
+  const { data: deleted, error } = await supabase.from('destinations').delete().eq('id', id).select('id').maybeSingle()
   if (error) {
     const message = error.code === '23503'
       ? 'Destinasi memiliki riwayat reservasi dan tidak dapat dihapus. Ubah status publikasinya menjadi arsip.'
       : `Destinasi gagal dihapus: ${error.message}`
     redirect(`/admin/destinasi?error=${encodeURIComponent(message)}`)
   }
+  if (!deleted) redirect('/admin/destinasi?error=Destinasi%20sudah%20berubah%20atau%20tidak%20ditemukan')
 
   // Metadata media sudah terhapus melalui cascade; bersihkan file fisik agar tidak menjadi orphan.
   const storagePaths = (relatedMedia || []).map((row) => row.storage_path)
   let storageCleanupWarning = ''
   if (storagePaths.length > 0) {
     const { error: storageError } = await supabase.storage.from('destination-media').remove(storagePaths)
-    if (storageError) storageCleanupWarning = ` Destinasi terhapus, tetapi ${storagePaths.length} file foto belum berhasil dibersihkan dari Storage: ${storageError.message}.`
+    if (storageError) storageCleanupWarning = ` Destinasi terhapus, tetapi ${storagePaths.length} file foto belum berhasil dibersihkan dari folder Storage ${existing.id}: ${storageError.message}.`
   }
 
   await writeAuditLog(supabase, profile.id, 'destination.deleted', existing.id, `Menghapus destinasi ${existing.name}`)

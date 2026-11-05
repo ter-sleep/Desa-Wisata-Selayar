@@ -30,7 +30,11 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
     .eq('id', userId)
     .maybeSingle()
 
-  if (error || !data) return null
+  if (error) {
+    console.error('Gagal membaca profil pengelola.', { code: error.code })
+    return null
+  }
+  if (!data) return null
   return data as CurrentProfile
 }
 
