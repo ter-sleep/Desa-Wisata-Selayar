@@ -2,6 +2,12 @@
   "publisher": "Badan Informasi Geospasial",
   "edition": "Juni 2026",
   "coordinateSystem": "WGS 84 / EPSG:4326",
+  "reference": {
+    "provider": "Google Maps",
+    "url": "https://www.google.com/maps/place/Bontomarannu,+Kec.+Bontomanai,+Kab.+Kepulauan+Selayar,+Sulawesi+Selatan/@-6.0918875,120.4756788,24813m/data=!3m1!1e3!4m6!3m5!1s0x2dbbb563bfa30cf1:0x72b741a462b9ea1c!8m2!3d-6.089094!4d120.5394232!16s%2Fg%2F1216ff3n",
+    "position": { "latitude": -6.089094, "longitude": 120.5394232 },
+    "purpose": "Place comparison only. The BIG polygon differs from the Google Maps outline; this link is not polygon data, a legally definitive boundary, or verified destination GPS."
+  },
   "village": {
     "file": "bontomarannu.geojson",
     "name": "Bontomarannu",

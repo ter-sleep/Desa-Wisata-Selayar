@@ -1,17 +1,20 @@
 import {
   ACESFilmicToneMapping, AmbientLight, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry,
-  Color, ConeGeometry, CylinderGeometry, DirectionalLight, ExtrudeGeometry, Group, IcosahedronGeometry,
-  InstancedMesh, Line, LineBasicMaterial, LineLoop, Material, Mesh, MeshStandardMaterial, Object3D,
-  Path, PerspectiveCamera, PlaneGeometry, RepeatWrapping, Scene, Shape, SphereGeometry,
+  Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide, ExtrudeGeometry, Group, IcosahedronGeometry,
+  InstancedMesh, Line, LineBasicMaterial, LineDashedMaterial, LineLoop, Material, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D,
+  Path, PerspectiveCamera, PlaneGeometry, RepeatWrapping, Scene, Shape, ShapeGeometry, SphereGeometry,
   SRGBColorSpace, Vector3, WebGLRenderer,
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { CSS2DObject, CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
+import { Line2 } from 'three/addons/lines/Line2.js'
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import type { MapPoint, Position } from '@/lib/map-data'
 import {
   geometryBounds, geometryCenter, geometryContains, geometryPolygons, mainIslandGeometry,
-  miniatureProjection, projectPosition, unprojectPosition, type AreaGeometry, type TourismGeography,
+  miniatureBoundaryDistance, miniatureFieldOfView, miniatureProjection, projectPosition, unprojectPosition, type AreaGeometry, type TourismGeography,
 } from '@/lib/tourism-geography'
 
 export type CameraPose = { position: [number, number, number]; target: [number, number, number] }
@@ -195,15 +198,39 @@ export function createMiniatureScene(container: HTMLDivElement, geography: Touri
     scene.add(loop)
   }
 
-  const villageMaterial = material(new LineBasicMaterial({ color: '#fff3b0', depthTest: false, transparent: true, opacity: .95 }))
-  const districtMaterial = material(new LineBasicMaterial({ color: '#d4e4bb', transparent: true, opacity: .55 }))
-  for (const [boundary, stroke] of [[geography.district, districtMaterial], [geography.village, villageMaterial]] as const) {
-    for (const rings of geometryPolygons(boundary.geometry)) for (const ring of rings) {
-      const line = new Line(geometry(new BufferGeometry().setFromPoints(ring.map(([longitude, latitude]) => {
+  const districtMaterial = material(new LineDashedMaterial({ color: '#f5dca3', dashSize: .08, gapSize: .05, depthTest: false, depthWrite: false, transparent: true, opacity: .8 }))
+  for (const rings of geometryPolygons(geography.district.geometry)) for (const ring of rings) {
+    const line = new Line(geometry(new BufferGeometry().setFromPoints(ring.map(([longitude, latitude]) => {
+      const [x, z] = projectPosition([latitude, longitude], projection)
+      return new Vector3(x, heightAt(x, z) + .06, z)
+    }))), districtMaterial)
+    line.computeLineDistances()
+    line.renderOrder = 2
+    scene.add(line)
+  }
+
+  const villageFill = material(new MeshBasicMaterial({ color: '#e76350', side: DoubleSide, depthTest: false, depthWrite: false, transparent: true, opacity: .16, toneMapped: false }))
+  const villageHalo = material(new LineMaterial({ color: '#fff9e9', linewidth: 7, depthTest: false, depthWrite: false, transparent: true, opacity: .98, toneMapped: false }))
+  const villageStroke = material(new LineMaterial({ color: '#e76350', linewidth: 4, dashed: true, dashSize: .055, gapSize: .035, depthTest: false, depthWrite: false, transparent: true, opacity: 1, toneMapped: false }))
+  for (const rings of geometryPolygons(geography.village.geometry)) {
+    const fillGeometry = geometry(new ShapeGeometry(shape(rings)).rotateX(-Math.PI / 2))
+    const vertices = fillGeometry.getAttribute('position')
+    for (let index = 0; index < vertices.count; index++) vertices.setY(index, heightAt(vertices.getX(index), vertices.getZ(index)) + .04)
+    const fill = new Mesh(fillGeometry, villageFill)
+    fill.renderOrder = 1
+    scene.add(fill)
+    for (const ring of rings) {
+      const positions = ring.flatMap(([longitude, latitude]) => {
         const [x, z] = projectPosition([latitude, longitude], projection)
-        return new Vector3(x, heightAt(x, z) + .06, z)
-      }))), stroke)
-      line.renderOrder = 3
+        return [x, heightAt(x, z) + .06, z]
+      })
+      const outline = geometry(new LineGeometry().setPositions(positions))
+      const halo = new Line2(outline, villageHalo)
+      halo.renderOrder = 3
+      scene.add(halo)
+      const line = new Line2(outline, villageStroke)
+      line.computeLineDistances()
+      line.renderOrder = 4
       scene.add(line)
     }
   }
@@ -240,11 +267,11 @@ export function createMiniatureScene(container: HTMLDivElement, geography: Touri
   const labels = new CSS2DRenderer()
   labels.domElement.className = 'miniature-label-layer'
   container.append(renderer.domElement, labels.domElement)
-  const camera = new PerspectiveCamera(38, 1, .1, 500)
+  const camera = new PerspectiveCamera(miniatureFieldOfView, 1, .1, 500)
   const controls = new OrbitControls(camera, renderer.domElement)
   controls.enableDamping = true
   controls.dampingFactor = .08
-  controls.minDistance = 3
+  controls.minDistance = 1.5
   controls.maxDistance = 160
   controls.maxPolarAngle = Math.PI * .47
   controls.autoRotateSpeed = .55
@@ -325,12 +352,16 @@ export function createMiniatureScene(container: HTMLDivElement, geography: Touri
   }
   renderer.domElement.addEventListener('webglcontextlost', contextLost)
   const axis = new Vector3(0, 1, 0)
-  function focus(position: Position, distance = 6) {
+  function focus(position: Position, distance = 6, northUp = false) {
     const [x, z] = projectPosition(position, projection)
     const target = new Vector3(x, heightAt(x, z) + .2, z)
-    const positionVector = target.clone().add(new Vector3(1, 1.1, 1.2).normalize().multiplyScalar(distance))
+    const positionVector = target.clone().add((northUp ? new Vector3(0, 1, .16) : new Vector3(1, 1.1, 1.2)).normalize().multiplyScalar(distance))
     restore({ position: [positionVector.x, positionVector.y, positionVector.z], target: [target.x, target.y, target.z] })
   }
+  function focusArea() {
+    focus(geometryCenter(geography.village.geometry), miniatureBoundaryDistance(geography.village.geometry, projection, camera.aspect), true)
+  }
+  if (!pose) focusArea()
 
   return {
     setPoints(points: MapPoint[]) {
@@ -375,7 +406,7 @@ export function createMiniatureScene(container: HTMLDivElement, geography: Touri
     rotate() { camera.position.sub(controls.target).applyAxisAngle(axis, Math.PI / 4).add(controls.target); controls.update() },
     zoom(factor: number) { camera.position.sub(controls.target).multiplyScalar(factor).add(controls.target); controls.update() },
     focus,
-    focusArea() { focus(geometryCenter(geography.village.geometry), 5) },
+    focusArea,
     showIslands() {
       const bounds = geometryBounds(geography.archipelago.geometry)
       const distance = Math.max(bounds.east - bounds.west, bounds.north - bounds.south) * projection.scale * 1.8

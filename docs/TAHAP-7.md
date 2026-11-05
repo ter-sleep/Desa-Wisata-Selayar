@@ -69,6 +69,18 @@ Harness unit `tsx` pada proyek CommonJS menampilkan deprecation warning Three.js
 
 Pemeriksaan browser memakai data lokal dan posisi perangkat simulasi yang terisolasi, bukan mengukur GPS lapangan. Tidak ada fixture koordinat yang dimasukkan ke katalog produksi. Ini bukan benchmark FPS, audit aksesibilitas lengkap, atau uji perangkat mobile fisik. Pemilik masih perlu memastikan hak penggunaan logo/data, kebenaran konten CMS, dan konfigurasi hosted sebelum deployment.
 
+## Perincian batas desa dan referensi Google Maps
+
+Poligon BIG Desa Bontomarannu berbeda dari outline pada referensi Google Maps. Titik tempat pada link (`-6.089094, 120.5394232`) berada di dalam poligon BIG, tetapi bukan pusat viewport URL dan bukan geometri batas. Pencarian pembanding pada layanan BIG 2021 tidak menghasilkan desa yang cocok; OpenStreetMap/Nominatim memberikan titik, bukan poligon batas. Tidak ada tracing screenshot atau penggantian koordinat batas dengan perkiraan.
+
+Perubahan tampilan menambahkan isian transparan dan garis merah-putih dengan lebar layar tetap pada miniatur, mempertahankan seluruh vertex pada satelit, serta menyediakan tautan pembanding dan penjelasan perbedaan sumber. Kamera awal/Fokus desa menyesuaikan frustum ke seluruh batas pada rasio viewport yang berbeda dengan pandangan utara di atas. Batas kecamatan tetap dibedakan dengan garis putus-putus.
+
+Uji browser pada scene Three.js sebenarnya memeriksa **381 vertex batas**, lebar garis 4 pixel, dan proyeksi kamera pada viewport 320, 375, 768, serta 1440 px: tidak ada vertex di luar frustum atau overflow horizontal. Satelit pada 375 dan 1440 px memuat tiga path batas, garis desa 4 pixel dengan pola `7 5`, serta 380 perintah M/L dan penutupan ring, tanpa overflow. Bahasa English/mode siang juga diperiksa: tautan dan keterangan sumber berubah bahasa, satu canvas miniatur tetap tampil, dan tidak ada overflow. Callback Leaflet diuji dengan input geometri langsung maupun Feature: `onEachFeature` menerima input asli, bukan selalu Feature.
+
+`pnpm check` untuk perincian ini lulus lint, typecheck, production build, dan **45 test lokal** (23 unit + 21 database/config/startup + 1 HTTP), tanpa failure atau skip. Regression tambahan mencakup frustum batas di berbagai rasio viewport, pemisahan titik tempat Google Maps dari viewport/poligon/GPS destinasi, dan callback Leaflet tanpa mutasi input GeoJSON. Integrasi layanan Supabase nyata tetap dijalankan oleh workflow GitHub Actions, bukan proyek hosted.
+
+Bentuk batas masih menggunakan snapshot BIG Juni 2026 dengan status **Batas Indikatif**. Penggantian agar mengikuti bentuk lain memerlukan poligon resmi/terverifikasi dari desa atau pemerintah (GeoJSON, KML, atau SHP), provenance, dan status penetapannya. Link pembanding tidak menambah GPS destinasi atau mengubah data database/historis.
+
 ## Masih memerlukan konfigurasi dan uji hosted
 
 - Buat proyek Supabase nonproduksi, isi URL/Publishable key, terapkan migration yang belum ada, dan sediakan akun aktif untuk masing-masing role.

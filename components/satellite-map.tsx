@@ -4,7 +4,7 @@ import { Fragment, useEffect, useState } from 'react'
 import { Circle, CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, Tooltip, useMap, ZoomControl } from 'react-leaflet'
 import { directionsUrl, satelliteTiles, type MapPoint, type Position } from '@/lib/map-data'
 import { useSitePreferences } from '@/components/site-preferences'
-import { geometryBounds, geometryCenter, type TourismGeography } from '@/lib/tourism-geography'
+import { geometryBounds, geometryCenter, preserveBoundaryDetail, type TourismGeography } from '@/lib/tourism-geography'
 import 'leaflet/dist/leaflet.css'
 
 function RecenterMap({ position, focusSequence }: { position: Position | null; focusSequence: number }) {
@@ -75,9 +75,9 @@ export function SatelliteMap({
         <TileLayer key={`satellite-${tileRetry}`} attribution="&copy; Esri, Maxar, Earthstar Geographics" url={satelliteTiles} eventHandlers={{ tileerror: tileError }} />
         <TileLayer key={`roads-${tileRetry}`} attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={.18} eventHandlers={{ tileerror: tileError }} />
         <ZoomControl key={language} position="bottomright" zoomInTitle={t('Perbesar peta')} zoomOutTitle={t('Perkecil peta')} />
-        <GeoJSON data={geography.district.geometry} style={{ color: '#f5dca3', weight: 2, dashArray: '7 5', fillOpacity: .03 }} />
-        <GeoJSON data={geography.village.geometry} style={{ color: '#fff6d3', weight: 7, opacity: .9, fillOpacity: 0 }} />
-        <GeoJSON data={geography.village.geometry} style={{ color: '#4daea0', weight: 3, fillColor: '#47a890', fillOpacity: .15 }}>
+        <GeoJSON data={geography.district.geometry} onEachFeature={preserveBoundaryDetail} style={{ color: '#f5dca3', weight: 2, dashArray: '7 5', fillOpacity: .03 }} />
+        <GeoJSON data={geography.village.geometry} onEachFeature={preserveBoundaryDetail} style={{ color: '#fff9e9', weight: 8, opacity: .98, fillOpacity: 0 }} />
+        <GeoJSON data={geography.village.geometry} onEachFeature={preserveBoundaryDetail} style={{ color: '#e76350', weight: 4, dashArray: '7 5', opacity: 1, fillColor: '#e76350', fillOpacity: .12 }}>
           <Tooltip permanent direction="center" className="map-region-label">{t('Desa Bontomarannu')}</Tooltip>
         </GeoJSON>
         <FocusRegion geography={geography} areaSequence={areaSequence} />

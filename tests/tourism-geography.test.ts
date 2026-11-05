@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import {
   geographySources, geometryBounds, geometryCenter, geometryContains, mainIslandGeometry,
-  miniatureProjection, parseBoundary, projectPosition, unprojectPosition,
+  miniatureBoundaryDistance, miniatureFieldOfView, miniatureProjection, parseBoundary, preserveBoundaryDetail, projectPosition, unprojectPosition,
 } from '../lib/tourism-geography'
 
 const read = (file: string) => JSON.parse(readFileSync(join(process.cwd(), 'public', 'maps', file), 'utf8'))
@@ -66,4 +66,44 @@ test('the miniature uses the actual main Selayar island and preserves geographic
   assert.ok(Math.abs(restored[1] - position[1]) < 1e-10)
   assert.ok(projectPosition([position[0], position[1] + .01], projection)[0] > projected[0])
   assert.ok(projectPosition([position[0] + .01, position[1]], projection)[1] < projected[1])
+})
+
+test('village boundary focus fits the entire outline in portrait and landscape viewports', () => {
+  const projection = miniatureProjection(archipelago.geometry)
+  const bounds = geometryBounds(village.geometry)
+  const width = (bounds.east - bounds.west) * projection.longitudeScale * projection.scale
+  const height = (bounds.north - bounds.south) * projection.scale
+  for (const aspect of [.4, .7, 1, 1.8]) {
+    const distance = miniatureBoundaryDistance(village.geometry, projection, aspect)
+    const visibleHeight = 2 * distance * Math.tan(miniatureFieldOfView * Math.PI / 360)
+    assert.ok(visibleHeight >= height * 1.35)
+    assert.ok(visibleHeight * aspect >= width * 1.35)
+    assert.ok(distance >= 3.25)
+  }
+  assert.ok(miniatureBoundaryDistance(village.geometry, projection, .4) > miniatureBoundaryDistance(village.geometry, projection, 1.8))
+  for (const aspect of [0, -1, NaN, Infinity]) {
+    assert.throws(() => miniatureBoundaryDistance(village.geometry, projection, aspect))
+  }
+})
+
+test('Google Maps is a place reference, not replacement boundary geometry or destination GPS', () => {
+  const { position, url, purpose } = geographySources.reference
+  assert.deepEqual(position, { latitude: -6.089094, longitude: 120.5394232 })
+  assert.ok(geometryContains(village.geometry, [position.latitude, position.longitude]))
+  assert.ok(!geometryContains(village.geometry, [-6.0918875, 120.4756788]))
+  assert.equal(new URL(url).origin, 'https://www.google.com')
+  assert.equal(new URL(url).search, '')
+  assert.match(purpose, /differs from the Google Maps outline/)
+  assert.match(purpose, /not polygon data/)
+  assert.deepEqual(village.geometry, villageData.features[0].geometry)
+})
+
+test('boundary rendering accepts original GeoJSON geometries and Features without losing vertex detail', () => {
+  for (const input of [village.geometry, villageData.features[0], district.geometry]) {
+    const before = structuredClone(input)
+    const layer = { options: { smoothFactor: 1, color: '#e76350' } }
+    preserveBoundaryDetail(input, layer)
+    assert.deepEqual(layer.options, { smoothFactor: 0, color: '#e76350' })
+    assert.deepEqual(input, before)
+  }
 })

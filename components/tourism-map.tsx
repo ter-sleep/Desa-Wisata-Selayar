@@ -8,7 +8,7 @@ import type { Message } from '@/lib/i18n'
 import { useSitePreferences } from '@/components/site-preferences'
 import { LoadingStatus } from '@/components/loading-status'
 import { SatelliteMap } from '@/components/satellite-map'
-import { loadTourismGeography, type TourismGeography } from '@/lib/tourism-geography'
+import { geographySources, loadTourismGeography, type TourismGeography } from '@/lib/tourism-geography'
 
 export type { MapPoint } from '@/lib/map-data'
 
@@ -118,6 +118,10 @@ export function TourismMap({ points }: { points: MapPoint[] }) {
         </div>
         {points.length === 0 && <p className="map-area-note" role="status">{t('Tampilan kawasan saja; belum ada pin destinasi terverifikasi.')}</p>}
       </div>
+      <aside className="map-boundary-comparison" aria-label={t('Rujukan batas wilayah')}>
+        <p>{t('Batas desa dari BIG dapat berbeda dari outline Google Maps. Referensi Google Maps tidak digunakan untuk menggambar ulang batas atau menetapkan GPS destinasi.')}</p>
+        <a href={geographySources.reference.url} target="_blank" rel="noreferrer">{t('Bandingkan di Google Maps')} ↗</a>
+      </aside>
       {points.length > 0 && (
         <section className="map-destination-list" aria-label={t('Daftar destinasi dengan GPS terverifikasi')}>
           <div className="map-destination-list-heading"><strong>{t('Destinasi terverifikasi')}</strong><span>{t(userPosition ? 'Jarak dihitung dari lokasi perangkat Anda' : 'Aktifkan Lokasi saya untuk menghitung jarak')}</span></div>

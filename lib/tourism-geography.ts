@@ -8,6 +8,12 @@ export type TourismGeography = { village: Boundary; district: Boundary; archipel
 export type Bounds = { west: number; south: number; east: number; north: number }
 export type MiniatureProjection = { latitude: number; longitude: number; longitudeScale: number; scale: number }
 export const geographySources = sources
+export const miniatureFieldOfView = 38
+
+export function preserveBoundaryDetail(_input: unknown, layer: { options: object }) {
+  // Leaflet passes the original input, which may be a geometry rather than a Feature.
+  Object.assign(layer.options, { smoothFactor: 0 })
+}
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -127,6 +133,14 @@ export function miniatureProjection(area: AreaGeometry): MiniatureProjection {
     latitude, longitude: (bounds.west + bounds.east) / 2, longitudeScale,
     scale: 20 / Math.max(bounds.north - bounds.south, (bounds.east - bounds.west) * longitudeScale),
   }
+}
+
+export function miniatureBoundaryDistance(area: AreaGeometry, projection: MiniatureProjection, aspect: number) {
+  if (!Number.isFinite(aspect) || aspect <= 0) throw new Error('The miniature viewport must have a positive, finite aspect ratio.')
+  const bounds = geometryBounds(area)
+  const width = (bounds.east - bounds.west) * projection.longitudeScale * projection.scale
+  const height = (bounds.north - bounds.south) * projection.scale
+  return Math.max(3.25, Math.max(height, width / aspect) * 1.35 / (2 * Math.tan(miniatureFieldOfView * Math.PI / 360)))
 }
 
 export function projectPosition([latitude, longitude]: Position, projection: MiniatureProjection): [number, number] {

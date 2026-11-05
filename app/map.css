@@ -269,6 +269,27 @@
   text-underline-offset: 3px;
 }
 
+.map-boundary-comparison {
+  padding: 18px 22px;
+  border-top: 1px solid var(--line);
+  border-left: 4px solid #e76350;
+  background: var(--sand-surface);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.map-boundary-comparison p {
+  margin: 0 0 8px;
+}
+
+.map-boundary-comparison a {
+  color: var(--forest);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .miniature-help {
   position: absolute;
   top: 62px;
@@ -427,18 +448,13 @@
 }
 
 .legend-boundary {
-  border: 2px solid #4daea0;
-  background: #f5e9bb;
+  border: 2px dashed #e76350;
+  background: #fce4db;
   border-radius: 2px;
 }
 
 .legend-district {
   border-bottom: 2px dashed #b08740;
-}
-
-.miniature-legend .legend-boundary {
-  border-color: #b08740;
-  background: #fff3b0;
 }
 
 .legend-landscape {
