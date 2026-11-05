@@ -13,6 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: language === 'en'
       ? 'Discover nature, trace history, and explore Bontomarannu Tourism Village in the Selayar Islands.'
       : 'Temukan alam, telusuri sejarah, dan kenali Desa Wisata Bontomarannu di Kepulauan Selayar.',
+    generator: 'v0.app',
   }
 }
 
