@@ -52,4 +52,8 @@ test('local integration requests cannot follow redirects to a remote host', asyn
   assert.equal(await (await guarded(`http://127.0.0.1:${address.port}/`)).text(), 'local')
   await assert.rejects(() => guarded(`http://127.0.0.1:${address.port}/redirect`))
   assert.throws(() => guarded('https://example.com'), /outside the local/)
+  const appGuard = guardedIntegrationFetch('http://127.0.0.1:54321', `http://127.0.0.1:${address.port}`)
+  const redirect = await appGuard(`http://127.0.0.1:${address.port}/redirect`)
+  assert.equal(redirect.status, 302)
+  assert.equal(redirect.headers.get('location'), 'https://example.com')
 })

@@ -9,6 +9,8 @@ Next.js App Router merender halaman publik dan dashboard. Server Actions memvali
 - `lib/visitor-rules.ts`, `lib/gps-rules.ts`, dan `lib/media-rules.ts` memusatkan aturan yang dipakai UI/server.
 - `supabase/migrations/` mendefinisikan tabel, relasi, RLS, Storage, dan RPC; `tests/` menguji aturan dan migration.
 
+CI menguji migration dan API melalui stack Supabase lokal sementara, dengan Auth, PostgREST, dan Storage yang berjalan sebagai layanan sebenarnya. Akun uji dan kredensial berasal dari stack tersebut; runner tidak terhubung ke proyek hosted. Pengaman test menolak endpoint selain loopback IPv4, proyek yang ter-link, dan redirect ke luar origin lokal. File status stack mengandung kredensial lokal dan harus dirahasiakan serta dibersihkan.
+
 Tanpa environment Supabase, katalog statis lama menjadi fallback tampilan; formulir tidak menyimpan data, login dinonaktifkan, dan tidak ada marker GPS yang dibuat dari perkiraan. Jika Supabase sudah dikonfigurasi tetapi query gagal, kesalahan tidak diperlakukan sebagai data kosong yang valid.
 
 ## Autentikasi dan role

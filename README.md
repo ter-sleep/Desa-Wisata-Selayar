@@ -27,6 +27,10 @@ pnpm test
 pnpm build
 ```
 
+GitHub Actions juga menjalankan `pnpm test:supabase` terhadap layanan Auth, PostgREST, dan Storage lokal yang bersifat sementara, termasuk pengiriman formulir dan sesi aplikasi melalui HTTP. Pengujian ini terpisah dari `pnpm test`: diperlukan Docker, Supabase CLI 3.0.0, serta stack lokal yang tidak terhubung ke proyek hosted.
+
+Untuk menjalankannya sendiri, siapkan **stack disposable** dengan migration proyek, simpan output `supabase status -o json` sebagai file UTF-8 tanpa BOM yang hanya dapat dibaca pengguna saat ini, lalu arahkan `DEWIS_SUPABASE_STATUS_FILE` ke file tersebut sebelum menjalankan `pnpm test:supabase`. File status dan output `supabase start` mengandung kredensial lokal: jangan tampilkan, bagikan, atau commit; hapus file status setelah selesai. Pengujian menolak proyek yang ter-link, endpoint selain `127.0.0.1`, dan redirect keluar. Perintah `supabase stop --no-backup` menghapus volume data lokal proyek, jadi jangan gunakan pada stack yang berisi data yang ingin dipertahankan.
+
 ## Konfigurasi Supabase
 
 Salin `.env.example` menjadi `.env.local`, lalu isi Project URL dan Publishable key dari Supabase Dashboard:
@@ -99,8 +103,8 @@ Kemudian:
 - `lib/supabase/` — browser/server client dan pembaruan sesi.
 - `lib/auth/` — pemeriksaan profil dan hak akses.
 - `supabase/migrations/` — skema, kebijakan RLS, dan seed data.
-- `tests/` — unit test dan uji PostgreSQL lokal terisolasi.
-- `.github/workflows/quality.yml` — lint, typecheck, test, dan build pada GitHub Actions.
+- `tests/` — unit test, uji PostgreSQL terisolasi, dan integrasi layanan Supabase lokal.
+- `.github/workflows/quality.yml` — lint, typecheck, test, build, dan integrasi Supabase sementara pada GitHub Actions.
 - `lib/site-data.ts` — katalog statis lama untuk fallback saat Supabase belum dikonfigurasi.
 
 ## Status pengembangan
@@ -111,7 +115,7 @@ Kemudian:
 - Tahap 4: upload foto, metadata media, pengaturan foto sampul, galeri publik, dan Storage privat dengan signed URL.
 - Tahap 5: manajemen koordinat GPS, verifikasi administrator, dan peta publik dengan jarak garis lurus serta tautan petunjuk arah.
 - Tahap 6: reservasi dan kontak pengunjung.
-- Tahap 7: pemeriksaan kualitas, hardening, dan pengujian lokal; integrasi Supabase nyata masih perlu diuji dengan konfigurasi pemilik.
+- Tahap 7: pemeriksaan kualitas, hardening, dan pengujian layanan Supabase lokal; pengujian proyek hosted dan deployment masih memerlukan konfigurasi pemilik.
 
 ## Catatan
 
@@ -150,4 +154,4 @@ Jalankan migration 005 setelah migration 001–004 dan lanjutkan dengan migratio
 4. Setelah konfigurasi, konten, izin foto, kebijakan privasi, dan hasil uji disetujui pemilik, deploy build Next.js ke platform yang mendukung Server Actions.
 5. Pastikan HTTPS aktif untuk login dan Geolocation API. Deployment belum dilakukan oleh perubahan ini.
 
-Nomor resmi, alamat, koordinat lapangan, jangka retensi data, proteksi spam/rate limiting, dan prosedur penghapusan data harus ditetapkan pemilik sebelum peluncuran. Pengujian otomatis lokal tidak menggantikan uji Auth, RLS, Storage, dan alur pengunjung pada proyek Supabase sebenarnya.
+Nomor resmi, alamat, koordinat lapangan, jangka retensi data, proteksi spam/rate limiting, dan prosedur penghapusan data harus ditetapkan pemilik sebelum peluncuran. Pengujian layanan Supabase lokal tidak menggantikan uji Auth, RLS, Storage, dan alur pengunjung pada proyek hosted dan lingkungan deployment yang disetujui pemilik.
