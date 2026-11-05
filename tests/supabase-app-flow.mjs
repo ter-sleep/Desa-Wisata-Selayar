@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import next from 'next'
+import { guardedIntegrationFetch } from './supabase-local-config.mjs'
 
 function browser(origin) {
   const cookies = new Map()
@@ -93,13 +94,19 @@ export async function testAppFlows(t, {
   assert.ok(address && typeof address !== 'string')
   const origin = `http://127.0.0.1:${address.port}`
   const app = next({ dev: true, hostname: '127.0.0.1', port: address.port })
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = guardedIntegrationFetch(config.url, origin, previousFetch)
   t.after(async () => {
-    server.closeAllConnections()
-    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
-    await app.close()
-    for (const [key, value] of Object.entries(previous)) {
-      if (value === undefined) delete process.env[key]
-      else process.env[key] = value
+    try {
+      server.closeAllConnections()
+      await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+      await app.close()
+    } finally {
+      globalThis.fetch = previousFetch
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[key]
+        else process.env[key] = value
+      }
     }
   })
   await app.prepare()

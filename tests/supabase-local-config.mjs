@@ -54,3 +54,17 @@ export function localOnlyFetch(origin) {
     return fetch(input, { ...init, redirect: 'error' })
   }
 }
+
+export function guardedIntegrationFetch(apiOrigin, appOrigin, fetchImpl = globalThis.fetch) {
+  const api = localApiOrigin(apiOrigin)
+  const app = localApiOrigin(appOrigin)
+  return (input, init) => {
+    const target = input instanceof Request ? input.url : String(input)
+    if (!URL.canParse(target)) throw new Error('Integration tests refuse an invalid request URL.')
+    const origin = new URL(target).origin
+    if (origin !== api && origin !== app) {
+      throw new Error('Integration tests refuse requests outside the local services.')
+    }
+    return fetchImpl(input, { ...init, redirect: origin === api ? 'error' : 'manual' })
+  }
+}

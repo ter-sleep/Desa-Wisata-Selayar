@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { createServer } from 'node:http'
 import test from 'node:test'
-import { localOnlyFetch, localSupabaseConfig } from './supabase-local-config.mjs'
+import { guardedIntegrationFetch, localOnlyFetch, localSupabaseConfig } from './supabase-local-config.mjs'
 
 test('Supabase integration configuration only accepts an unlinked loopback API', async () => {
   const status = {
@@ -47,4 +47,9 @@ test('local integration requests cannot follow redirects to a remote host', asyn
   const request = localOnlyFetch(`http://127.0.0.1:${address.port}`)
   assert.equal(await (await request(`http://127.0.0.1:${address.port}/`)).text(), 'local')
   await assert.rejects(() => request(`http://127.0.0.1:${address.port}/redirect`))
+
+  const guarded = guardedIntegrationFetch(`http://127.0.0.1:${address.port}`, 'http://127.0.0.1:54321')
+  assert.equal(await (await guarded(`http://127.0.0.1:${address.port}/`)).text(), 'local')
+  await assert.rejects(() => guarded(`http://127.0.0.1:${address.port}/redirect`))
+  assert.throws(() => guarded('https://example.com'), /outside the local/)
 })

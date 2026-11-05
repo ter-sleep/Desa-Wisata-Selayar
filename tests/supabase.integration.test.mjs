@@ -361,6 +361,7 @@ test('local Supabase Auth, PostgREST, RLS, RPC and Storage', { timeout: 240000 }
     const noNewLink = await anon.storage.from(bucket).createSignedUrl(publicPath, 600)
     assert.ok(noNewLink.error, 'Unpublished media must not receive new signed URLs')
     assert.equal((await localFetch(signed.signedUrl)).status, 200, 'Previously signed URLs remain valid until expiry')
+    requireData(await editor.from('destination_media').delete().eq('id', media[2].id).select('id').single(), 'Delete private image metadata')
     requireData(await editor.storage.from(bucket).remove([privatePath]), 'Delete private image')
     assert.ok((await editor.storage.from(bucket).download(privatePath)).error, 'Deleted image must not be readable')
   })
