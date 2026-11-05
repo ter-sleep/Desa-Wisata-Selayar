@@ -1,0 +1,34 @@
+{
+  "publisher": "Badan Informasi Geospasial",
+  "edition": "Juni 2026",
+  "coordinateSystem": "WGS 84 / EPSG:4326",
+  "village": {
+    "file": "bontomarannu.geojson",
+    "name": "Bontomarannu",
+    "code": "73.01.04.2008",
+    "status": "Batas Indikatif",
+    "service": "https://geoservices.big.go.id/rbi/rest/services/BATASWILAYAH/BATAS_DESAKEL_AR/MapServer/0",
+    "query": "WADMKD = 'Bontomarannu' AND WADMKC = 'Bontomanai' AND WADMKK LIKE '%Selayar%'",
+    "geometryPrecision": 6
+  },
+  "district": {
+    "file": "bontomanai.geojson",
+    "name": "Bontomanai",
+    "code": "73.01.04",
+    "service": "https://geoservices.big.go.id/rbi/rest/services/BATASWILAYAH/BATAS_KECAMATAN_AR/MapServer/0",
+    "query": "WADMKC = 'Bontomanai' AND WADMKK LIKE '%Selayar%'",
+    "geometryPrecision": 6
+  },
+  "archipelago": {
+    "file": "kepulauan-selayar.geojson",
+    "name": "Kepulauan Selayar",
+    "code": "73.01",
+    "service": "https://geoservices.big.go.id/rbi/rest/services/BATASWILAYAH/BATAS_KABKOTA_AR/MapServer/0",
+    "query": "WADMKK LIKE '%Selayar%'",
+    "geometryPrecision": 6,
+    "maxAllowableOffset": 0.00025,
+    "purpose": "Generalized geographic silhouettes for the illustrated miniature, not cadastral or navigation data."
+  },
+  "usage": "Public BIG query services with source attribution. Service metadata does not specify an explicit reuse license; review the publisher's terms before deployment.",
+  "illustration": "Vegetation, buildings, sea, and relief in the miniature are decorative and do not represent surveyed terrain or land use."
+}

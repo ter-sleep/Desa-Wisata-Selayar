@@ -1,6 +1,6 @@
 # DEWIS — Desa Wisata Bontomarannu
 
-Website informasi dan promosi Desa Wisata Bontomarannu, Kepulauan Selayar. Proyek ini menggunakan Next.js App Router, React, TypeScript, Tailwind CSS, Leaflet, dan Supabase (PostgreSQL/Auth/Storage) sebagai backend terintegrasi.
+Website informasi dan promosi Desa Wisata Bontomarannu, Kepulauan Selayar. Proyek ini menggunakan Next.js App Router, React, TypeScript, Tailwind CSS, Leaflet, Three.js, dan Supabase (PostgreSQL/Auth/Storage) sebagai backend terintegrasi.
 
 ## Persyaratan
 
@@ -70,7 +70,7 @@ Kemudian:
 - `/` — website publik dan destinasi unggulan dari database.
 - `/destinasi` — direktori destinasi terpublikasi.
 - `/destinasi/[slug]` — detail destinasi dari database.
-- `/peta` — marker hanya untuk koordinat GPS terverifikasi.
+- `/peta` — miniatur 3D ilustratif dan citra satelit dengan batas wilayah; pin destinasi hanya untuk koordinat GPS terverifikasi.
 - `/pusat-data` — ringkasan data publik dan unduhan CSV.
 - `/login` — autentikasi pengelola.
 - `/admin` — ringkasan dashboard.
@@ -82,6 +82,20 @@ Kemudian:
 - `/admin/peta/[id]` — ambil GPS perangkat, pilih pin di peta, simpan sumber/akurasi, dan verifikasi koordinat.
 - `/reservasi`, `/kontak`, dan `/kebijakan-privasi` — permintaan kunjungan, pesan, dan informasi privasi.
 - `/admin/reservasi`, `/admin/pesan`, dan `/admin/pengaturan` — tindak lanjut pengunjung dan informasi kontak publik.
+
+## Antarmuka dan peta publik
+
+Header dan footer menonjolkan logo kampus, UKM, dan tim, dengan identitas **Dikelola oleh UKM BAHASA Universitas Muhammadiyah Makassar**. Bagian halaman memakai palet mint, laut, pasir, dan tanah agar lebih mudah dibedakan. Tombol siang/malam serta Indonesia/English tersedia di header; pilihan disimpan dalam cookie selama satu tahun. Tanpa pilihan tema, tampilan mengikuti pengaturan sistem.
+
+Switch bahasa menerjemahkan antarmuka publik, formulir, login, metadata, dan teks editorial yang ada dalam katalog. Nama tempat dipertahankan. Konten CMS baru atau yang diubah tetap menggunakan bahasa penulis sampai terjemahannya ditambahkan; tidak ada layanan terjemahan eksternal.
+
+Peta menyediakan **miniatur 3D** sebagai pilihan pertama dan **satelit 2D** sebagai pilihan kedua. Miniatur memakai bentuk geografis Selayar dari data BIG serta pohon, bukit, dan bangunan ilustratif, bukan hasil survei elevasi atau lokasi bangunan. Tersedia rotasi, zoom, putaran otomatis, reset, fokus desa, dan tampilan kepulauan. Mode satelit mempertahankan Esri/OpenStreetMap dan menambahkan batas desa serta kecamatan.
+
+**Bontomarannu adalah desa di Kecamatan Bontomanai**, bukan nama kecamatan. Batas Desa Bontomarannu dari BIG edisi Juni 2026 berstatus **Batas Indikatif**, sehingga bukan penetapan batas hukum. Sumber, kode administratif, dan parameter generalisasi dicatat di `public/maps/sources.json`; tinjau ketentuan penggunaan penerbit sebelum deployment karena metadata layanan tidak mencantumkan lisensi pemakaian ulang yang eksplisit.
+
+Peta kawasan tetap berguna saat GPS destinasi belum tersedia. Label wilayah bukan pin destinasi; tidak ada koordinat wisata fiktif. Lokasi perangkat digunakan di memori browser setelah izin, tetap tersedia ketika memilih destinasi atau berpindah mode, dan tidak disimpan ke database. Petunjuk arah serta salin koordinat hanya tersedia untuk titik terverifikasi. Miniatur memerlukan WebGL2 dan menyediakan pemulihan atau pilihan satelit jika gagal.
+
+Logo tim yang tersedia dipertahankan, bukan digambar ulang. Asetnya bertuliskan Aksara Manadewa, sedangkan label program mengikuti permintaan Aksara Berdampak; pemilik perlu mengonfirmasi penggunaan identitas dan izin seluruh logo sebelum peluncuran.
 
 ## Dokumentasi
 

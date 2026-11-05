@@ -43,6 +43,30 @@ Test HTTP Server Actions memeriksa status, catatan, atribusi dan waktu database 
 - Metadata favicon yang mengarah ke file tidak tersedia diganti ikon yang tersedia; kontrol navigasi mempunyai atribut aksesibilitas.
 - GitHub Actions menjalankan lint, typecheck, test, build, dan integrasi layanan Supabase lokal.
 
+## Pembaruan antarmuka dan miniatur Selayar
+
+Pembaruan ini menambahkan identitas UKM BAHASA Universitas Muhammadiyah Makassar di header/footer, logo lokal yang lebih menonjol, warna bagian yang dibedakan, tema siang/malam, serta Indonesia/English. Halaman publik, login, formulir, metadata, dan ekspor CSV mengikuti bahasa pilihan. Konten CMS baru tetap dalam bahasa penulis bila belum ada dalam katalog terjemahan.
+
+Peta kini memakai miniatur Three.js bergaya diorama sebagai pilihan pertama dan satelit Leaflet sebagai pilihan kedua. Siluet geografis serta batas Desa Bontomarannu/Kecamatan Bontomanai berasal dari snapshot BIG Juni 2026. Status batas desa tetap **Batas Indikatif**; relief, pohon, dan rumah hanya ilustrasi. Tidak ada migration, perubahan data historis, atau koordinat destinasi baru yang dibuat oleh pembaruan UI.
+
+| Pemeriksaan pembaruan UI | Hasil |
+|---|---|
+| `pnpm lint` | Berhasil tanpa warning ESLint. |
+| `pnpm typecheck` | Berhasil. |
+| `pnpm test:unit` | 20 test berhasil, termasuk katalog bahasa, logo, geometri/identitas BIG, urutan koordinat, serta kartu miniatur dengan dan tanpa GPS. |
+| `pnpm test:db` | 21 test/subtest berhasil; aturan role, metadata pemrosesan, GPS, Storage, dan pemeliharaan data historis tetap berlaku. |
+| `pnpm test:http` | 1 smoke test berhasil: 15 rute berbahasa Inggris, branding, cookie SSR, redirect admin, error/404, tiga logo lokal, dan keutuhan empat aset data/provenance. |
+| `pnpm build` | Production build berhasil tanpa konfigurasi Supabase hosted. |
+| Browser peta | Rotasi, zoom dengan rasio 0,8, putaran otomatis/berhenti, reset kamera, fokus desa, dan tampilan kepulauan bekerja pada scene WebGL sebenarnya. Satelit memuat citra dan tiga path batas administratif. |
+| Tema, bahasa, dan posisi | Tema mengubah material tanpa mereset kamera; label/kontrol berubah bahasa. Posisi perangkat simulasi tetap tersedia antar-mode dan tidak menghasilkan pin destinasi; pengulangan lokasi tidak menggandakan label. |
+| Responsive | 16 kombinasi kedua mode pada viewport browsing-context 320, 375, 768, dan 1440 px, dalam Indonesia/siang dan English/malam, tidak memiliki overflow horizontal. Ukuran judul kartu miniatur tetap 29 px. |
+| Pemulihan | HTTP 503 aset wilayah menampilkan error dan retry berhasil. WebGL2 yang dinonaktifkan menawarkan satelit. Kehilangan konteks grafis menonaktifkan kontrol; retry mempertahankan kamera dengan satu canvas tanpa duplikasi label. |
+| Supabase services | Job integrasi nyata tetap dijalankan melalui workflow GitHub Actions pada branch fitur; Docker tidak tersedia pada host Windows ini. Hasil per-commit dicatat pada workflow, bukan dianggap diuji pada proyek hosted. |
+
+Harness unit `tsx` pada proyek CommonJS menampilkan deprecation warning Three.js untuk pemuatan CommonJS; test tetap berhasil. Source renderer memakai import ES module dan production bundle Next.js berhasil. Tinjau kompatibilitas harness saat meningkatkan Three.js; warning ini tidak disembunyikan.
+
+Pemeriksaan browser memakai data lokal dan posisi perangkat simulasi yang terisolasi, bukan mengukur GPS lapangan. Tidak ada fixture koordinat yang dimasukkan ke katalog produksi. Ini bukan benchmark FPS, audit aksesibilitas lengkap, atau uji perangkat mobile fisik. Pemilik masih perlu memastikan hak penggunaan logo/data, kebenaran konten CMS, dan konfigurasi hosted sebelum deployment.
+
 ## Masih memerlukan konfigurasi dan uji hosted
 
 - Buat proyek Supabase nonproduksi, isi URL/Publishable key, terapkan migration yang belum ada, dan sediakan akun aktif untuk masing-masing role.

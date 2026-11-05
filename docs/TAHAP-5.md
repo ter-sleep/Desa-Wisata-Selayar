@@ -19,6 +19,26 @@ Tahap ini menambahkan alur pencatatan titik geografis destinasi, pemeriksaan adm
 - Tombol lokasi pengunjung memerlukan persetujuan eksplisit browser. Lokasi pengunjung tidak dikirim ke database.
 - Perhitungan jarak garis lurus (Haversine) dari posisi perangkat ke destinasi dan tautan petunjuk arah Google Maps.
 
+## Dua tampilan peta publik
+
+Halaman `/peta` kini menyediakan miniatur ilustratif 3D dan peta satelit 2D. Fokus administratifnya adalah **Desa Bontomarannu, Kecamatan Bontomanai, Kabupaten Kepulauan Selayar**. Nama kecamatan tidak diganti menjadi Bontomarannu.
+
+| Data BIG edisi Juni 2026 | Kode PUM | Pemakaian |
+|---|---|---|
+| Desa Bontomarannu | `73.01.04.2008` | Batas desa, label wilayah, dan fokus tampilan. Status sumber: **Batas Indikatif**. |
+| Kecamatan Bontomanai | `73.01.04` | Garis batas kecamatan sebagai konteks administratif. |
+| Kabupaten Kepulauan Selayar | `73.01` | Siluet geografis yang digeneralisasi untuk miniatur kepulauan. |
+
+GeoJSON disajikan dari `public/maps/`; identitas wilayah, kode, provinsi/kabupaten, koordinat WGS 84 yang finite, dan penutupan ring diperiksa sebelum digunakan. Ordinat altitude opsional dari sumber dipertahankan, tetapi tidak dipakai sebagai data relief. Detail layanan, query, presisi, generalisasi, dan keterbatasan lisensi ada di `public/maps/sources.json`. Batas indikatif tidak boleh dipresentasikan sebagai batas hukum definitif; bentuk miniatur bukan data kadaster atau navigasi.
+
+Miniatur Three.js dapat diputar, diperbesar/diperkecil, direset, difokuskan ke desa, serta diubah menjadi tampilan kepulauan. Pohon, bukit, bangunan, dan laut adalah ilustrasi deterministik, bukan data vegetasi, elevasi, atau posisi rumah. Mode siang/malam mengubah material tanpa mereset kamera. Animasi berhenti saat peta tidak terlihat; kehilangan konteks grafis menonaktifkan kontrol dan menyediakan retry yang mempertahankan kamera.
+
+Satelit memakai citra Esri dengan overlay OpenStreetMap, batas desa yang disorot, dan batas Kecamatan Bontomanai bergaris putus-putus. Pusat awal ditentukan dari geometri desa yang sebenarnya. Peta dan batas wilayah tetap ditampilkan saat tidak ada GPS destinasi; label wilayah harus dibedakan dari pin destinasi.
+
+Filter, pilihan destinasi, posisi perangkat, dan perhitungan jarak dipakai bersama kedua mode. Memilih destinasi tidak menghapus posisi perangkat. Posisi di luar cakupan miniatur tetap disimpan di memori dan dapat dilihat pada satelit; miniatur memberi keterangan alih-alih memindahkan pin ke lokasi fiktif. Hanya titik GPS terverifikasi yang memiliki petunjuk arah dan salin koordinat.
+
+Miniatur memerlukan WebGL2. Kegagalan data wilayah, citra, atau konteks grafis ditampilkan dengan opsi pemulihan, bukan peta kosong yang dianggap berhasil. Data miniatur berasal dari aset website; mode satelit tetap meminta tile penyedia eksternal. Penyedia tersebut dapat menerima alamat IP dan area viewport, khususnya ketika pengunjung memfokuskan lokasi perangkat. Lihat kebijakan privasi dan ketentuan tiap penerbit sebelum deployment.
+
 ## Metadata database tambahan
 
 Migration `202611040004_gps_management.sql` menambahkan:
