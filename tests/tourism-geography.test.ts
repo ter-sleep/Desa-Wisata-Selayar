@@ -98,6 +98,20 @@ test('Google Maps is a place reference, not replacement boundary geometry or des
   assert.deepEqual(village.geometry, villageData.features[0].geometry)
 })
 
+test('regional regulations are historical references, not replacement boundary geometry', () => {
+  const { bontokoraang, kaburu } = geographySources.legalReferences
+  assert.equal(new URL(bontokoraang.url).origin, 'https://peraturan.bpk.go.id')
+  assert.equal(new URL(kaburu.url).origin, 'https://peraturan.bpk.go.id')
+  assert.match(bontokoraang.url, /\/49065\//)
+  assert.match(kaburu.url, /\/49018\//)
+  assert.equal(bontokoraang.article, 'Pasal 9')
+  assert.equal(kaburu.article, 'Pasal 3')
+  assert.match(bontokoraang.purpose, /does not include/)
+  assert.match(kaburu.purpose, /separately/)
+  assert.equal(village.status, 'Batas Indikatif')
+  assert.deepEqual(village.geometry, villageData.features[0].geometry)
+})
+
 test('boundary rendering accepts original GeoJSON geometries and Features without losing vertex detail', () => {
   for (const input of [village.geometry, villageData.features[0], district.geometry]) {
     const before = structuredClone(input)

@@ -290,6 +290,34 @@
   text-underline-offset: 3px;
 }
 
+.map-boundary-details {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.map-boundary-details summary {
+  padding: 12px 0;
+  color: var(--forest);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.map-boundary-details summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.map-boundary-details p {
+  margin: 6px 0 10px;
+}
+
+.map-boundary-reference-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
 .miniature-help {
   position: absolute;
   top: 62px;

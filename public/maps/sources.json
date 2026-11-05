@@ -8,6 +8,18 @@
     "position": { "latitude": -6.089094, "longitude": 120.5394232 },
     "purpose": "Place comparison only. The BIG polygon differs from the Google Maps outline; this link is not polygon data, a legally definitive boundary, or verified destination GPS."
   },
+  "legalReferences": {
+    "bontokoraang": {
+      "url": "https://peraturan.bpk.go.id/Details/49065/perda-kab-selayar-no-7-tahun-2010",
+      "article": "Pasal 9",
+      "purpose": "Historical context about the formation and neighboring boundary of Bontokoraang. The nine-page copy inspected refers to a map annex but does not include it."
+    },
+    "kaburu": {
+      "url": "https://peraturan.bpk.go.id/Details/49018/perda-kab-selayar-no-17-tahun-2011",
+      "article": "Pasal 3",
+      "purpose": "Historical context about the neighboring boundary of Kaburu. The regulation refers to a map to be established separately."
+    }
+  },
   "village": {
     "file": "bontomarannu.geojson",
     "name": "Bontomarannu",

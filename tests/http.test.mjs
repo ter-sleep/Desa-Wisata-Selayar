@@ -75,7 +75,10 @@ test('public routes preserve redirects, branding, language preferences and not-f
     assert.match(html, /universitas-muhammadiyah-makassar\.webp/, path)
     assert.match(html, /ukm-bahasa\.webp/, path)
     assert.match(html, /aksara-berdampak\.webp/, path)
+    if (path === '/kebijakan-privasi') assert.match(html, /regulation links open in JDIH BPK/)
   }
+  const privacyInIndonesian = await request('/kebijakan-privasi', 'dewis-language=id')
+  assert.match(await privacyInIndonesian.text(), /tautan peraturan dibuka di JDIH BPK/)
   const englishNotFound = await request('/destinasi/does-not-exist', 'dewis-language=en')
   assert.equal(englishNotFound.status, 404)
   assert.match(await englishNotFound.text(), /This page is not available/)

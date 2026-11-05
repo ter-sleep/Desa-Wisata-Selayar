@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { englishMessages, localizeContent, parseLanguage, parseTheme, translate } from '../lib/i18n'
 import { SitePreferencesProvider } from '../components/site-preferences'
 import { DestinationCard, Footer, Watermark } from '../components/site'
+import { BoundaryReferences } from '../components/boundary-references'
 import { destinations, navItems } from '../lib/site-data'
 
 test('display preferences accept only supported languages and themes', () => {
@@ -54,4 +55,26 @@ test('institutional logos are local and prominent in both header and footer vari
   assert.match(footer, /Universitas Muhammadiyah Makassar/)
   assert.match(footer, /Aksara Berdampak/)
   assert.match(footer, /href="\/peta"/)
+})
+
+test('boundary history links to regulations and distinguishes legal context from indicative geometry in both languages', () => {
+  const render = (language: 'id' | 'en') => renderToStaticMarkup(
+    <SitePreferencesProvider initialLanguage={language}><BoundaryReferences /></SitePreferencesProvider>,
+  )
+  const indonesian = render('id')
+  const english = render('en')
+  for (const html of [indonesian, english]) {
+    assert.match(html, /<details class="map-boundary-details">/)
+    assert.match(html, /https:\/\/peraturan\.bpk\.go\.id\/Details\/49065\//)
+    assert.match(html, /https:\/\/peraturan\.bpk\.go\.id\/Details\/49018\//)
+    assert.equal((html.match(/target="_blank" rel="noreferrer"/g) || []).length, 3)
+  }
+  assert.match(indonesian, /Riwayat batas desa/)
+  assert.match(indonesian, /Bontomarannu di utara Bontokoraang/)
+  assert.match(indonesian, /Bontomarannu di sebelah timur Kaburu/)
+  assert.match(indonesian, /tetap bersumber dari BIG dan bersifat indikatif/)
+  assert.match(english, /Village boundary history/)
+  assert.match(english, /Bontomarannu north of Bontokoraang/)
+  assert.match(english, /Bontomarannu east of Kaburu/)
+  assert.match(english, /The displayed polygon still comes from BIG and is indicative/)
 })
