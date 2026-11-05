@@ -98,6 +98,23 @@ test('Google Maps is a place reference, not replacement boundary geometry or des
   assert.deepEqual(village.geometry, villageData.features[0].geometry)
 })
 
+test('the detailed BIG map is a separate comparison rather than replacement geometry', () => {
+  const { url, item, scale, boundaryCompilation, purpose } = geographySources.detailedMapReference
+  const viewer = new URL(url)
+  assert.equal(viewer.origin, 'https://geoservices.big.go.id')
+  assert.equal(viewer.searchParams.get('webmap'), '7222de46187848efa7512cc9aade7caf')
+  assert.equal(new URL(item).searchParams.get('id'), viewer.searchParams.get('webmap'))
+  assert.equal(viewer.searchParams.get('center'), '120.532,-6.079')
+  assert.equal(viewer.searchParams.get('level'), '14')
+  assert.equal(scale, '1:5.000')
+  assert.equal(boundaryCompilation, 'Juli 2025')
+  assert.match(purpose, /not verification or replacement/)
+  assert.match(purpose, /different statuses/)
+  assert.match(purpose, /larger scale/)
+  assert.equal(village.status, 'Batas Indikatif')
+  assert.deepEqual(village.geometry, villageData.features[0].geometry)
+})
+
 test('regional regulations are historical references, not replacement boundary geometry', () => {
   const { bontokoraang, kaburu } = geographySources.legalReferences
   assert.equal(new URL(bontokoraang.url).origin, 'https://peraturan.bpk.go.id')

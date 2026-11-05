@@ -39,7 +39,7 @@ export default async function PrivacyPolicyPage() {
           <p className="eyebrow">{t('06 — Preferensi tampilan dan peta')}</p>
           <h2>{t('Pilihan yang disimpan')}</h2>
           <p>{t('Pilihan bahasa dan mode siang/malam disimpan dalam cookie selama satu tahun. Cookie ini tidak menyimpan lokasi perangkat atau data formulir.')}</p>
-          <p>{t('Lokasi perangkat hanya digunakan di memori browser setelah Anda memberi izin, tidak disimpan ke database. Miniatur memakai data geografis yang disajikan website; tampilan satelit meminta citra Esri dan OpenStreetMap sehingga penyedia dapat menerima alamat IP dan area peta yang dilihat. Petunjuk arah dan tautan pembanding dibuka di Google Maps, sementara tautan peraturan dibuka di JDIH BPK, hanya ketika Anda memilihnya.')}</p>
+          <p>{t('Lokasi perangkat hanya digunakan di memori browser setelah Anda memberi izin, tidak disimpan ke database. Miniatur memakai data geografis yang disajikan website; tampilan satelit meminta citra Esri dan OpenStreetMap sehingga penyedia dapat menerima alamat IP dan area peta yang dilihat. Petunjuk arah dibuka di Google Maps; tautan pembanding dibuka di Google Maps atau BIG, sementara tautan peraturan dibuka di JDIH BPK, hanya ketika Anda memilihnya.')}</p>
         </article>
       </section>
     </main>

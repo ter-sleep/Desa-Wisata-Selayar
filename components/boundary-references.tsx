@@ -9,7 +9,11 @@ export function BoundaryReferences() {
   return (
     <aside className="map-boundary-comparison" aria-label={t('Rujukan batas wilayah')}>
       <p>{t('Batas desa dari BIG dapat berbeda dari outline Google Maps. Referensi Google Maps tidak digunakan untuk menggambar ulang batas atau menetapkan GPS destinasi.')}</p>
-      <a href={geographySources.reference.url} target="_blank" rel="noreferrer">{t('Bandingkan di Google Maps')} ↗</a>
+      <div className="map-boundary-reference-links">
+        <a href={geographySources.reference.url} target="_blank" rel="noreferrer">{t('Bandingkan di Google Maps')} ↗</a>
+        <a href={geographySources.detailedMapReference.url} target="_blank" rel="noreferrer">{t('Lihat peta BIG 1:5.000')} ↗</a>
+      </div>
+      <p className="map-boundary-scale-note">{t('Peta RBI BIG skala 1:5.000 adalah pembanding, bukan verifikasi poligon ini. Status segmen batas beragam; peta ini tidak dapat menjadi acuan pengambilan informasi pada skala lebih besar dari 1:5.000.')}</p>
       <details className="map-boundary-details">
         <summary>{t('Riwayat batas desa')}</summary>
         <p>{t('Perda Kabupaten Kepulauan Selayar No. 7 Tahun 2010 menyebut Bontokoraang dimekarkan dari Bontomarannu dan menempatkan Bontomarannu di utara Bontokoraang. Perda No. 17 Tahun 2011 menyebut Bontomarannu di sebelah timur Kaburu.')}</p>

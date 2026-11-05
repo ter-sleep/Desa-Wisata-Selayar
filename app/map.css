@@ -318,6 +318,10 @@
   gap: 8px 18px;
 }
 
+.map-boundary-comparison .map-boundary-scale-note {
+  margin: 10px 0 0;
+}
+
 .miniature-help {
   position: absolute;
   top: 62px;

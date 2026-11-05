@@ -57,7 +57,7 @@ test('institutional logos are local and prominent in both header and footer vari
   assert.match(footer, /href="\/peta"/)
 })
 
-test('boundary history links to regulations and distinguishes legal context from indicative geometry in both languages', () => {
+test('boundary references distinguish comparisons and legal context from indicative geometry in both languages', () => {
   const render = (language: 'id' | 'en') => renderToStaticMarkup(
     <SitePreferencesProvider initialLanguage={language}><BoundaryReferences /></SitePreferencesProvider>,
   )
@@ -65,14 +65,22 @@ test('boundary history links to regulations and distinguishes legal context from
   const english = render('en')
   for (const html of [indonesian, english]) {
     assert.match(html, /<details class="map-boundary-details">/)
+    assert.match(html, /https:\/\/geoservices\.big\.go\.id\/portal\/home\/webmap\/viewer\.html\?webmap=7222de46187848efa7512cc9aade7caf/)
     assert.match(html, /https:\/\/peraturan\.bpk\.go\.id\/Details\/49065\//)
     assert.match(html, /https:\/\/peraturan\.bpk\.go\.id\/Details\/49018\//)
-    assert.equal((html.match(/target="_blank" rel="noreferrer"/g) || []).length, 3)
+    assert.equal((html.match(/target="_blank" rel="noreferrer"/g) || []).length, 4)
+    assert.doesNotMatch(html, /<iframe/)
   }
+  assert.match(indonesian, /Lihat peta BIG 1:5\.000/)
+  assert.match(indonesian, /pembanding, bukan verifikasi poligon ini/)
+  assert.match(indonesian, /skala lebih besar dari 1:5\.000/)
   assert.match(indonesian, /Riwayat batas desa/)
   assert.match(indonesian, /Bontomarannu di utara Bontokoraang/)
   assert.match(indonesian, /Bontomarannu di sebelah timur Kaburu/)
   assert.match(indonesian, /tetap bersumber dari BIG dan bersifat indikatif/)
+  assert.match(english, /View the BIG 1:5,000 map/)
+  assert.match(english, /comparison, not verification of this polygon/)
+  assert.match(english, /larger scale than 1:5,000/)
   assert.match(english, /Village boundary history/)
   assert.match(english, /Bontomarannu north of Bontokoraang/)
   assert.match(english, /Bontomarannu east of Kaburu/)
