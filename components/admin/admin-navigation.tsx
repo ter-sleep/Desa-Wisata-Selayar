@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, MapPin, Images, MapPinned, CalendarDays, Mail, Settings } from 'lucide-react'
+import { LayoutDashboard, MapPin, Images, MapPinned, CalendarDays, Mail, Settings, Database } from 'lucide-react'
 
 const items = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/destinasi', label: 'Data destinasi', icon: MapPin, exact: false },
+  { href: '/admin/pusat-data', label: 'Pusat Data', icon: Database, exact: false },
   { href: '/admin/galeri', label: 'Galeri dan foto', icon: Images, exact: false },
   { href: '/admin/peta', label: 'Koordinat GPS', icon: MapPinned, exact: false },
   { href: '/admin/reservasi', label: 'Reservasi wisata', icon: CalendarDays, exact: false },

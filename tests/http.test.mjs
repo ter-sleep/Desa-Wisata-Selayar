@@ -34,13 +34,18 @@ test('public routes preserve redirects, branding, language preferences and not-f
     headers: cookie ? { cookie } : undefined,
   })
 
-  for (const path of ['/admin', '/admin/destinasi', '/admin/galeri', '/admin/peta']) {
+  for (const path of ['/admin', '/admin/destinasi', '/admin/galeri', '/admin/peta', '/admin/pusat-data']) {
     const response = await request(path)
     assert.equal(response.status, 307, path)
     const location = new URL(response.headers.get('location'), base)
     assert.equal(location.pathname, '/login')
     assert.equal(location.searchParams.get('error'), 'setup')
   }
+
+  // Pusat Data hanya untuk pengelola: alamat lama diarahkan ke login bagi pengunjung.
+  const legacyDataCenter = await request('/pusat-data')
+  assert.ok([307, 308].includes(legacyDataCenter.status), '/pusat-data redirects visitors')
+  assert.equal(new URL(legacyDataCenter.headers.get('location'), base).pathname, '/login')
 
   const notFound = await request('/destinasi/destinasi-yang-tidak-ada-123')
   assert.equal(notFound.status, 404)
@@ -58,7 +63,6 @@ test('public routes preserve redirects, branding, language preferences and not-f
     ['/galeri', 'Look a little'],
     ['/informasi', 'Stories that'],
     ['/peta', 'See the village from'],
-    ['/pusat-data', 'Data for a better journey.'],
     ['/reservasi', 'Reservation request'],
     ['/kontak', 'Send us a message'],
     ['/kebijakan-privasi', 'Information you submit'],

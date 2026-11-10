@@ -12,6 +12,6 @@ function MapLoading() {
 
 const TourismMap = dynamic(() => import('./tourism-map').then((module) => module.TourismMap), { ssr: false, loading: MapLoading })
 
-export function TourismMapLoader({ points }: { points: MapPoint[] }) {
-  return <TourismMap points={points} />
+export function TourismMapLoader({ points, compact = false }: { points: MapPoint[]; compact?: boolean }) {
+  return <TourismMap points={points} compact={compact} />
 }

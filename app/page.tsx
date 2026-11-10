@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { ArrowDown, ArrowUpRight, Compass, Leaf, Map, Sparkles } from 'lucide-react'
 import { DestinationCard, Footer, Header, Notice } from '@/components/site'
+import { TourismMapLoader } from '@/components/tourism-map-loader'
+import { toMapPoints } from '@/lib/map-data'
 import { getPublicDestinations } from '@/lib/queries/destinations'
 import { getTranslator } from '@/lib/site-preferences'
 
@@ -8,6 +10,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   const [destinations, { t }] = await Promise.all([getPublicDestinations(), getTranslator()])
+  const points = toMapPoints(destinations)
   return (
     <div>
       <Header />
@@ -45,9 +48,20 @@ export default async function Home() {
           </div>
           <div className="featured-grid">{destinations.slice(0, 3).map((destination, index) => <DestinationCard key={destination.slug} destination={destination} featured={index === 0} />)}</div>
         </section>
+        <section className="section home-map-section" aria-labelledby="home-map-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">{t('03 — Peta jelajah')}</p>
+              <h2 id="home-map-heading">{t('Lihat kawasan dari')}<br /><em>{t('sudut pandang peta.')}</em></h2>
+              <p className="muted-copy">{t('Telusuri miniatur 3D dan citra satelit Bontomarannu langsung dari beranda. Buka halaman Peta Jelajah untuk filter destinasi, batas wilayah, dan petunjuk arah.')}</p>
+            </div>
+            <Link href="/peta" className="text-link dark">{t('Buka peta lengkap')} <ArrowUpRight size={15} /></Link>
+          </div>
+          <TourismMapLoader points={points} compact />
+        </section>
         <section className="pillars">
           <div className="section section-heading">
-            <div><p className="eyebrow light">{t('03 — Cara kami bercerita')}</p><h2>{t('Empat cara melihat')}<br /><em>{t('Bontomarannu.')}</em></h2></div>
+            <div><p className="eyebrow light">{t('04 — Cara kami bercerita')}</p><h2>{t('Empat cara melihat')}<br /><em>{t('Bontomarannu.')}</em></h2></div>
           </div>
           <div className="pillar-grid">
             <div><Leaf /><span>01</span><h3>{t('Alam')}</h3><p>{t('Puncak, hutan, sungai, dan pesisir untuk dijelajahi.')}</p></div>
@@ -59,7 +73,7 @@ export default async function Home() {
         <section className="section planning">
           <div className="planning-card">
             <div>
-              <p className="eyebrow">{t('04 — Sebelum berangkat')}</p>
+              <p className="eyebrow">{t('05 — Sebelum berangkat')}</p>
               <h2>{t('Datang dengan')}<br /><em>{t('rasa ingin tahu.')}</em></h2>
               <p>{t('Informasi fasilitas, tarif, jam operasional, dan kontak diperbarui setelah mendapat konfirmasi pengelola.')}</p>
               <Link href="/panduan-berkunjung" className="button button-dark">{t('Panduan berkunjung')} <ArrowUpRight size={17} /></Link>

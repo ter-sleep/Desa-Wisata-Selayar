@@ -98,7 +98,7 @@ function invalidateDestinationPages(slug?: string) {
   revalidatePath('/')
   revalidatePath('/destinasi')
   revalidatePath('/peta')
-  revalidatePath('/pusat-data')
+  revalidatePath('/admin/pusat-data')
   revalidatePath('/admin')
   revalidatePath('/admin/destinasi')
   revalidatePath('/destinasi/[slug]', 'page')

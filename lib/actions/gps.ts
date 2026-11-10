@@ -23,7 +23,7 @@ function refreshGpsPages() {
   revalidatePath('/admin/peta')
   revalidatePath('/admin/destinasi')
   revalidatePath('/peta')
-  revalidatePath('/pusat-data')
+  revalidatePath('/admin/pusat-data')
   revalidatePath('/destinasi')
   revalidatePath('/destinasi/[slug]', 'page')
 }

@@ -1,8 +1,9 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Box, LocateFixed, Satellite } from 'lucide-react'
+import { ArrowUpRight, Box, LocateFixed, Satellite } from 'lucide-react'
 import { directionsUrl, filterMapPoints, haversineKm, type MapPoint, type Position } from '@/lib/map-data'
 import type { Message } from '@/lib/i18n'
 import { useSitePreferences } from '@/components/site-preferences'
@@ -21,7 +22,8 @@ function MiniatureLoading() {
 const MiniatureMap = dynamic(() => import('./miniature-map').then((module) => module.MiniatureMap), { ssr: false, loading: MiniatureLoading })
 type GeographyState = { kind: 'loading' } | { kind: 'ready'; data: TourismGeography } | { kind: 'error' }
 
-export function TourismMap({ points }: { points: MapPoint[] }) {
+/** `compact` dipakai di beranda: peta tanpa filter/daftar, dengan tautan ke halaman Peta Jelajah lengkap. */
+export function TourismMap({ points, compact = false }: { points: MapPoint[]; compact?: boolean }) {
   const { t, content, language } = useSitePreferences()
   const [view, setView] = useState<'miniature' | 'satellite'>('miniature')
   const [geography, setGeography] = useState<GeographyState>({ kind: 'loading' })
@@ -84,23 +86,24 @@ export function TourismMap({ points }: { points: MapPoint[] }) {
   }
 
   return (
-    <div className="tourism-map-wrap">
+    <div className={compact ? 'tourism-map-wrap is-compact' : 'tourism-map-wrap'}>
       <div className="map-toolbar">
         <div>
           <span className="eyebrow">{t('Peta jelajah')}</span>
           <strong>{t('Desa wisata Bontomarannu')}</strong>
           <p className="map-subtitle">{t('Miniatur ilustratif dan citra satelit dengan batas Desa Bontomarannu dan Kecamatan Bontomanai.')}</p>
+          {compact && <Link href="/peta" className="text-link dark map-full-link">{t('Buka peta lengkap')} <ArrowUpRight size={15} aria-hidden="true" /></Link>}
         </div>
         <div className="map-view-switch" role="group" aria-label={t('Pilihan tampilan peta')}>
           <button type="button" aria-pressed={view === 'miniature'} onClick={() => setView('miniature')}><Box size={18} /> {t('Miniatur 3D')}</button>
           <button type="button" aria-pressed={view === 'satellite'} onClick={() => setView('satellite')}><Satellite size={17} /> {t('Satelit 2D')}</button>
         </div>
       </div>
-      <div className="map-filterbar">
+      {!compact && <div className="map-filterbar">
         <label htmlFor="map-search">{t('Cari titik wisata')}<input id="map-search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveSlug(null); setFocusTarget('destination') }} placeholder={t('Contoh: Puncak...')} /></label>
         <label htmlFor="map-category">{t('Kategori')}<select id="map-category" value={category} onChange={(event) => { setCategory(event.target.value); setActiveSlug(null); setFocusTarget('destination') }}>{categories.map((item) => <option key={item} value={item}>{content(item)}</option>)}</select></label>
         <span className="map-result" role="status">{t('{visible} dari {total} titik terverifikasi', { visible: visiblePoints.length, total: points.length })}</span>
-      </div>
+      </div>}
       {locationError && <p className="map-location-message" role="status">{t(locationError)}</p>}
       <div className="tourism-map-grid">
         <div className="map-stage">
@@ -119,8 +122,8 @@ export function TourismMap({ points }: { points: MapPoint[] }) {
         </div>
         {points.length === 0 && <p className="map-area-note" role="status">{t('Tampilan kawasan saja; belum ada pin destinasi terverifikasi.')}</p>}
       </div>
-      <BoundaryReferences />
-      {points.length > 0 && (
+      {!compact && <BoundaryReferences />}
+      {!compact && points.length > 0 && (
         <section className="map-destination-list" aria-label={t('Daftar destinasi dengan GPS terverifikasi')}>
           <div className="map-destination-list-heading"><strong>{t('Destinasi terverifikasi')}</strong><span>{t(userPosition ? 'Jarak dihitung dari lokasi perangkat Anda' : 'Aktifkan Lokasi saya untuk menghitung jarak')}</span></div>
           <div className="map-destination-cards">
@@ -143,7 +146,7 @@ export function TourismMap({ points }: { points: MapPoint[] }) {
           {visiblePoints.length === 0 && <p className="map-empty" role="status">{t('Tidak ada titik yang cocok. Coba kata kunci atau kategori lain.')}</p>}
         </section>
       )}
-      <p className="gps-distance-disclaimer">{t('Jarak ditampilkan sebagai jarak garis lurus berdasarkan perhitungan koordinat, bukan estimasi jarak atau waktu perjalanan melalui jalan.')}</p>
+      {!compact && <p className="gps-distance-disclaimer">{t('Jarak ditampilkan sebagai jarak garis lurus berdasarkan perhitungan koordinat, bukan estimasi jarak atau waktu perjalanan melalui jalan.')}</p>}
     </div>
   )
 }

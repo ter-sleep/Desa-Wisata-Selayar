@@ -71,9 +71,10 @@ Kemudian:
 - `/destinasi` — direktori destinasi terpublikasi.
 - `/destinasi/[slug]` — detail destinasi dari database.
 - `/peta` — miniatur 3D ilustratif dan citra satelit dengan batas wilayah; pin destinasi hanya untuk koordinat GPS terverifikasi.
-- `/pusat-data` — ringkasan data publik dan unduhan CSV.
+- `/pusat-data` — alamat lama; pengunjung diarahkan ke `/login`, staf ke `/admin/pusat-data`.
 - `/login` — autentikasi pengelola.
 - `/admin` — ringkasan dashboard.
+- `/admin/pusat-data` — ringkasan data destinasi dan unduhan CSV (khusus pengelola).
 - `/admin/destinasi` — daftar dan pengelolaan CRUD destinasi.
 - `/admin/destinasi/baru` — tambah destinasi.
 - `/admin/destinasi/[id]/edit` — edit destinasi.

@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ArrowUpRight, CheckCircle2, CircleDashed, Database, Download, Search } from 'lucide-react'
 import Link from 'next/link'
 import { PageIntro } from '@/components/site'
 import { useSitePreferences } from '@/components/site-preferences'
 import type { Destination } from '@/lib/site-data'
 
-export function PublicDataCenter({ destinations }: { destinations: Destination[] }) {
+/** `embedded` menampilkan pusat data di dalam panel admin (tanpa header/footer situs publik). */
+export function PublicDataCenter({ destinations, embedded = false }: { destinations: Destination[]; embedded?: boolean }) {
   const { t, content } = useSitePreferences()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('Semua')
@@ -45,8 +46,18 @@ export function PublicDataCenter({ destinations }: { destinations: Destination[]
   ]
 
   return (
-    <main className="page-shell data-center">
-      <PageIntro eyebrow="Pusat data pariwisata" title={t('Data yang membantu perjalanan.')} text="Ringkasan data destinasi dan kesiapan informasi Bontomarannu. Gunakan dashboard ini sebagai titik awal sebelum kunjungan dan survei lapangan." />
+    <Shell className={embedded ? 'data-center admin-data-center' : 'page-shell data-center'} embedded={embedded}>
+      {embedded ? (
+        <section className="admin-page-heading">
+          <div>
+            <p className="eyebrow">PUSAT DATA PARIWISATA</p>
+            <h1>Pusat Data</h1>
+            <p>Ringkasan data destinasi dan kesiapan informasi Bontomarannu, hanya dapat diakses oleh pengelola.</p>
+          </div>
+        </section>
+      ) : (
+        <PageIntro eyebrow="Pusat data pariwisata" title={t('Data yang membantu perjalanan.')} text="Ringkasan data destinasi dan kesiapan informasi Bontomarannu. Gunakan dashboard ini sebagai titik awal sebelum kunjungan dan survei lapangan." />
+      )}
       <section className="data-summary" aria-label={t('Ringkasan data')}>
         <div><span className="summary-label">{t('Destinasi terpublikasi')}</span><strong>{String(destinations.length).padStart(2, '0')}</strong><small>{t('entri dari database')}</small></div>
         <div><span className="summary-label">{t('Koordinat terverifikasi')}</span><strong>{String(verifiedCount).padStart(2, '0')}</strong><small>{t('titik GPS valid')}</small></div>
@@ -89,6 +100,11 @@ export function PublicDataCenter({ destinations }: { destinations: Destination[]
         </div>
       </section>
       <div className="data-note"><strong>{t('Catatan metodologi')}</strong><span>{t('Status menunjukkan tingkat kesiapan informasi publik, bukan penilaian kualitas destinasi. Seluruh data perlu dikonfirmasi bersama pemerintah desa, pengelola, dan masyarakat.')}</span></div>
-    </main>
+    </Shell>
   )
+}
+
+function Shell({ embedded, className, children }: { embedded: boolean; className: string; children: ReactNode }) {
+  // Panel admin sudah memiliki <main>; hindari elemen <main> bersarang.
+  return embedded ? <div className={className}>{children}</div> : <main className={className}>{children}</main>
 }
