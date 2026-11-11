@@ -1,251 +1,152 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useState, type ChangeEvent } from 'react'
-import {
-  Circle,
-  CircleMarker,
-  MapContainer,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-  ZoomControl,
-} from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
+import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ArrowUpRight, Box, LocateFixed, Satellite } from 'lucide-react'
+import { directionsUrl, filterMapPoints, haversineKm, type MapPoint, type Position } from '@/lib/map-data'
+import type { Message } from '@/lib/i18n'
+import { useSitePreferences } from '@/components/site-preferences'
+import { LoadingStatus } from '@/components/loading-status'
+import { SatelliteMap } from '@/components/satellite-map'
+import { BoundaryReferences } from '@/components/boundary-references'
+import { loadTourismGeography, type TourismGeography } from '@/lib/tourism-geography'
 
-export type MapPoint = {
-  slug: string
-  name: string
-  category: string
-  description: string
-  position: [number, number]
-  status: string
-  accuracyMeters?: number
-  coordinateSource?: string
+export type { MapPoint } from '@/lib/map-data'
+
+function MiniatureLoading() {
+  const { t } = useSitePreferences()
+  return <LoadingStatus className="map-loading">{t('Memuat miniatur 3D...')}</LoadingStatus>
 }
 
-type Position = [number, number]
+const MiniatureMap = dynamic(() => import('./miniature-map').then((module) => module.MiniatureMap), { ssr: false, loading: MiniatureLoading })
+type GeographyState = { kind: 'loading' } | { kind: 'ready'; data: TourismGeography } | { kind: 'error' }
 
-function RecenterMap({ position }: { position: Position | null }) {
-  const map = useMap()
+/** `compact` dipakai di beranda: peta tanpa filter/daftar, dengan tautan ke halaman Peta Jelajah lengkap. */
+export function TourismMap({ points, compact = false }: { points: MapPoint[]; compact?: boolean }) {
+  const { t, content, language } = useSitePreferences()
+  const [view, setView] = useState<'miniature' | 'satellite'>('miniature')
+  const [geography, setGeography] = useState<GeographyState>({ kind: 'loading' })
+  const [geographyRetry, setGeographyRetry] = useState(0)
+  const [activeSlug, setActiveSlug] = useState<string | null>(null)
+  const [focusSequence, setFocusSequence] = useState(0)
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState('Semua')
+  const [userPosition, setUserPosition] = useState<Position | null>(null)
+  const [focusTarget, setFocusTarget] = useState<'area' | 'destination' | 'user'>('area')
+  const [areaSequence, setAreaSequence] = useState(0)
+  const [locationError, setLocationError] = useState<Message | null>(null)
+  const [locating, setLocating] = useState(false)
+  const categories = useMemo(() => ['Semua', ...Array.from(new Set(points.map((point) => point.category)))], [points])
+  const visiblePoints = useMemo(() => filterMapPoints(points, query, category), [points, query, category])
+  const selected = visiblePoints.find((point) => point.slug === activeSlug) || visiblePoints[0] || null
+  const focusPoint = focusTarget === 'user' ? userPosition : focusTarget === 'destination' ? selected?.position : null
+  const latitude = focusPoint?.[0]
+  const longitude = focusPoint?.[1]
+  const focusPosition = useMemo<Position | null>(() =>
+    latitude === undefined || longitude === undefined ? null : [latitude, longitude],
+  [latitude, longitude])
+  const selectPoint = useCallback((slug: string) => { setActiveSlug(slug); setFocusTarget('destination'); setFocusSequence((value) => value + 1) }, [])
+  const focusArea = useCallback(() => { setFocusTarget('area'); setAreaSequence((value) => value + 1) }, [])
+
   useEffect(() => {
-    if (position) map.flyTo(position, Math.max(map.getZoom(), 14), { animate: true, duration: 0.7 })
-  }, [map, position])
-  return null
-}
-
-function MapActions({
-  position,
-  onLocate,
-  onFocus,
-  onError,
-}: {
-  position: Position | null
-  onLocate: (position: Position) => void
-  onFocus: () => void
-  onError: (message: string) => void
-}) {
-  const map = useMap()
+    const controller = new AbortController()
+    loadTourismGeography(controller.signal).then((data) => {
+      if (!controller.signal.aborted) setGeography({ kind: 'ready', data })
+    }).catch((error) => {
+      if (controller.signal.aborted) return
+      console.error('The tourism boundaries could not be loaded.', error instanceof Error ? error.message : 'Boundary request failed.')
+      setGeography({ kind: 'error' })
+    })
+    return () => controller.abort()
+  }, [geographyRetry])
 
   function locateUser() {
-    onError('')
+    setLocationError(null)
     if (!navigator.geolocation) {
-      onError('Browser tidak mendukung geolocation.')
+      setLocationError('Browser tidak mendukung geolocation.')
       return
     }
+    setLocating(true)
     navigator.geolocation.getCurrentPosition(
       (result) => {
-        const next: Position = [result.coords.latitude, result.coords.longitude]
-        onLocate(next)
-        map.flyTo(next, 15, { animate: true })
+        setUserPosition([result.coords.latitude, result.coords.longitude])
+        setFocusTarget('user')
+        setFocusSequence((value) => value + 1)
+        setLocating(false)
       },
       (error) => {
-        const message = error.code === 1
+        setLocationError(error.code === 1
           ? 'Izin lokasi ditolak. Aktifkan izin lokasi pada browser.'
-          : error.code === 2
-            ? 'Lokasi perangkat tidak tersedia.'
-            : 'Permintaan lokasi melewati batas waktu. Coba lagi di area terbuka.'
-        onError(message)
+          : error.code === 2 ? 'Lokasi perangkat tidak tersedia.' : 'Permintaan lokasi melewati batas waktu. Coba lagi di area terbuka.')
+        setLocating(false)
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     )
   }
 
   return (
-    <div className="map-actions">
-      <button type="button" onClick={() => { onFocus(); if (position) map.flyTo(position, 15, { animate: true }) }}>
-        Fokus titik
-      </button>
-      <button type="button" onClick={locateUser}>Lokasi saya</button>
-    </div>
-  )
-}
-
-function haversineKm(from: Position, to: Position) {
-  const toRad = (value: number) => (value * Math.PI) / 180
-  const earthRadiusKm = 6371.0088
-  const dLat = toRad(to[0] - from[0])
-  const dLng = toRad(to[1] - from[1])
-  const a = Math.sin(dLat / 2) ** 2
-    + Math.cos(toRad(from[0])) * Math.cos(toRad(to[0])) * Math.sin(dLng / 2) ** 2
-  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
-
-function directionsUrl(position: Position) {
-  return `https://www.google.com/maps/dir/?api=1&destination=${position[0]},${position[1]}`
-}
-
-export function TourismMap({ points }: { points: MapPoint[] }) {
-  const [active, setActive] = useState(0)
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState('Semua')
-  const [userPosition, setUserPosition] = useState<Position | null>(null)
-  const [locationMessage, setLocationMessage] = useState('')
-
-  const categories = useMemo<string[]>(
-    () => ['Semua', ...Array.from(new Set(points.map((point: MapPoint) => point.category)))],
-    [points],
-  )
-
-  const visiblePoints = points.filter(
-    (point) =>
-      (category === 'Semua' || point.category === category) &&
-      point.name.toLowerCase().includes(query.toLowerCase()),
-  )
-
-  const selected = visiblePoints[active] ?? visiblePoints[0] ?? null
-  const focusPosition = userPosition || selected?.position || null
-
-  return (
-    <div className="tourism-map-wrap">
+    <div className={compact ? 'tourism-map-wrap is-compact' : 'tourism-map-wrap'}>
       <div className="map-toolbar">
         <div>
-          <span className="eyebrow">Peta jelajah</span>
-          <strong>Desa wisata Bontomarannu</strong>
-          <p className="map-subtitle">Lokasi destinasi berdasarkan koordinat GPS yang telah diverifikasi pengelola.</p>
+          <span className="eyebrow">{t('Peta jelajah')}</span>
+          <strong>{t('Desa wisata Bontomarannu')}</strong>
+          <p className="map-subtitle">{t('Miniatur ilustratif dan citra satelit dengan batas Desa Bontomarannu dan Kecamatan Bontomanai.')}</p>
+          {compact && <Link href="/peta" className="text-link dark map-full-link">{t('Buka peta lengkap')} <ArrowUpRight size={15} aria-hidden="true" /></Link>}
         </div>
-        <span className="map-live"><i /> Peta interaktif</span>
+        <div className="map-view-switch" role="group" aria-label={t('Pilihan tampilan peta')}>
+          <button type="button" aria-pressed={view === 'miniature'} onClick={() => setView('miniature')}><Box size={18} /> {t('Miniatur 3D')}</button>
+          <button type="button" aria-pressed={view === 'satellite'} onClick={() => setView('satellite')}><Satellite size={17} /> {t('Satelit 2D')}</button>
+        </div>
       </div>
-
-      <div className="map-filterbar">
-        <label htmlFor="map-search">
-          Cari titik wisata
-          <input id="map-search" value={query} onChange={(event: ChangeEvent<HTMLInputElement>) => { setQuery(event.target.value); setActive(0) }} placeholder="Contoh: Puncak..." />
-        </label>
-        <label htmlFor="map-category">
-          Kategori
-          <select id="map-category" value={category} onChange={(event: ChangeEvent<HTMLSelectElement>) => { setCategory(event.target.value); setActive(0) }}>
-            {categories.map((item: string) => <option key={item}>{item}</option>)}
-          </select>
-        </label>
-        <span className="map-result">{visiblePoints.length} dari {points.length} titik terverifikasi</span>
-      </div>
-
-      {locationMessage && <p className="map-location-message" role="status">{locationMessage}</p>}
-
+      {!compact && <div className="map-filterbar">
+        <label htmlFor="map-search">{t('Cari titik wisata')}<input id="map-search" value={query} onChange={(event) => { setQuery(event.target.value); setActiveSlug(null); setFocusTarget('destination') }} placeholder={t('Contoh: Puncak...')} /></label>
+        <label htmlFor="map-category">{t('Kategori')}<select id="map-category" value={category} onChange={(event) => { setCategory(event.target.value); setActiveSlug(null); setFocusTarget('destination') }}>{categories.map((item) => <option key={item} value={item}>{content(item)}</option>)}</select></label>
+        <span className="map-result" role="status">{t('{visible} dari {total} titik terverifikasi', { visible: visiblePoints.length, total: points.length })}</span>
+      </div>}
+      {locationError && <p className="map-location-message" role="status">{t(locationError)}</p>}
       <div className="tourism-map-grid">
-        {points.length > 0 ? (
-          <div className="leaflet-shell">
-            <MapContainer
-              center={selected?.position || points[0].position}
-              zoom={11}
-              scrollWheelZoom
-              zoomControl={false}
-              className="leaflet-map"
-              aria-label="Peta destinasi wisata Bontomarannu"
-            >
-              <TileLayer
-                attribution="&copy; Esri, Maxar, Earthstar Geographics"
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              />
-              <TileLayer
-                attribution="&copy; OpenStreetMap contributors"
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                opacity={0.18}
-              />
-              <ZoomControl position="bottomright" />
-              <RecenterMap position={focusPosition} />
-              <MapActions
-                position={selected?.position || points[0].position}
-                onLocate={setUserPosition}
-                onFocus={() => setUserPosition(null)}
-                onError={setLocationMessage}
-              />
-
-              {visiblePoints.map((point, index) => (
-                <Fragment key={point.slug}>
-                  {point.accuracyMeters && point.accuracyMeters > 0 && point.accuracyMeters <= 5000 && (
-                    <Circle
-                      center={point.position}
-                      radius={point.accuracyMeters}
-                      pathOptions={{ color: '#f6c453', weight: 1, fillColor: '#f6c453', fillOpacity: 0.12 }}
-                    />
-                  )}
-                  <CircleMarker
-                    center={point.position}
-                    radius={point === selected ? 13 : 9}
-                    pathOptions={{
-                      color: point === selected ? '#f6c453' : '#fff6d7',
-                      fillColor: point === selected ? '#f6c453' : '#173d32',
-                      fillOpacity: 0.95,
-                      weight: 3,
-                    }}
-                    eventHandlers={{ click: () => setActive(index) }}
-                  >
-                    <Tooltip permanent direction="top" offset={[0, -8]} opacity={0.96} className="map-pin-label">{point.name}</Tooltip>
-                    <Popup>
-                      <div className="map-popup">
-                        <span className="eyebrow">{point.category}</span>
-                        <strong>{point.name}</strong>
-                        <p>{point.description}</p>
-                        <small>{point.status} · GPS terverifikasi{point.accuracyMeters ? ` · akurasi ±${Math.round(point.accuracyMeters)} m` : ''}</small>
-                        {point.coordinateSource && <small>Sumber: {point.coordinateSource}</small>}
-                        <a href={`/destinasi/${point.slug}`}>Buka halaman destinasi ↗</a>
-                        <a href={directionsUrl(point.position)} target="_blank" rel="noreferrer">Petunjuk arah ↗</a>
-                      </div>
-                    </Popup>
-                  </CircleMarker>
-                </Fragment>
-              ))}
-
-              {userPosition && (
-                <CircleMarker center={userPosition} radius={8} pathOptions={{ color: '#fff', weight: 3, fillColor: '#2879ca', fillOpacity: 1 }}>
-                  <Tooltip permanent direction="top">Lokasi Anda</Tooltip>
-                </CircleMarker>
-              )}
-            </MapContainer>
-            <div className="map-overlay-badge"><span>GPS VERIFIED</span><b>Klik pin untuk menjelajah</b><small>Petunjuk arah tersedia pada detail setiap titik.</small></div>
-            <div className="map-credit">Citra satelit Esri · overlay jalan OpenStreetMap</div>
-          </div>
-        ) : (
-          <div className="map-pending" role="status">
-            <strong>Koordinat GPS belum tersedia</strong>
-            <p>Belum ada destinasi dengan koordinat GPS terverifikasi. Peta akan menampilkan marker setelah pengelola memasukkan dan memvalidasi titik lokasi lapangan.</p>
-          </div>
-        )}
+        <div className="map-stage">
+          {geography.kind === 'ready' && (
+            <div className="map-actions">
+              <button type="button" onClick={focusArea}>{t('Fokus wilayah')}</button>
+              <button type="button" disabled={!selected} onClick={() => { if (selected) selectPoint(selected.slug) }}>{t('Fokus titik')}</button>
+              <button type="button" disabled={locating} aria-busy={locating} onClick={locateUser}><LocateFixed size={14} /> {t('Lokasi saya')}</button>
+            </div>
+          )}
+          {geography.kind === 'loading' && <LoadingStatus className="map-loading">{t('Memuat batas wilayah...')}</LoadingStatus>}
+          {geography.kind === 'error' && <div className="map-data-error" role="alert"><p>{t('Data batas wilayah gagal dimuat. Periksa koneksi atau coba lagi.')}</p><button type="button" className="button button-dark" onClick={() => { setGeography({ kind: 'loading' }); setGeographyRetry((value) => value + 1) }}>{t('Coba lagi')}</button></div>}
+          {geography.kind === 'ready' && (view === 'miniature'
+            ? <MiniatureMap geography={geography.data} points={visiblePoints} selected={selected} userPosition={userPosition} focusPosition={focusPosition} focusSequence={focusSequence} areaSequence={areaSequence} onSelect={selectPoint} onFocusArea={focusArea} />
+            : <SatelliteMap geography={geography.data} points={visiblePoints} selected={selected} userPosition={userPosition} focusPosition={focusPosition} focusSequence={focusSequence} areaSequence={areaSequence} onSelect={selectPoint} />)}
+        </div>
+        {points.length === 0 && <p className="map-area-note" role="status">{t('Tampilan kawasan saja; belum ada pin destinasi terverifikasi.')}</p>}
       </div>
-
-      {points.length > 0 && (
-        <section className="map-destination-list" aria-label="Daftar destinasi dengan GPS terverifikasi">
-          <div className="map-destination-list-heading"><strong>Destinasi terverifikasi</strong><span>{userPosition ? 'Jarak dihitung dari lokasi perangkat Anda' : 'Aktifkan Lokasi saya untuk menghitung jarak'}</span></div>
+      {!compact && <BoundaryReferences />}
+      {!compact && points.length > 0 && (
+        <section className="map-destination-list" aria-label={t('Daftar destinasi dengan GPS terverifikasi')}>
+          <div className="map-destination-list-heading"><strong>{t('Destinasi terverifikasi')}</strong><span>{t(userPosition ? 'Jarak dihitung dari lokasi perangkat Anda' : 'Aktifkan Lokasi saya untuk menghitung jarak')}</span></div>
           <div className="map-destination-cards">
             {visiblePoints.map((point) => {
               const distance = userPosition ? haversineKm(userPosition, point.position) : null
               return (
-                <article className="map-destination-card" key={point.slug}>
-                  <div><span>{point.category}</span><strong>{point.name}</strong><small>{point.accuracyMeters ? `Akurasi GPS ±${Math.round(point.accuracyMeters)} m` : 'Akurasi GPS tidak dicatat'}</small></div>
+                <article className={selected?.slug === point.slug ? 'map-destination-card selected' : 'map-destination-card'} key={point.slug}>
+                  <button type="button" className="map-destination-select" aria-pressed={selected?.slug === point.slug} onClick={() => selectPoint(point.slug)}>
+                    <span>{content(point.category)}</span><strong>{point.name}</strong>
+                    <small>{point.accuracyMeters ? t('Akurasi GPS ±{accuracy} m', { accuracy: Math.round(point.accuracyMeters) }) : t('Akurasi GPS tidak dicatat')}</small>
+                  </button>
                   <div className="map-destination-card-actions">
-                    {distance !== null && <b>{distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`}</b>}
-                    <a href={directionsUrl(point.position)} target="_blank" rel="noreferrer">Petunjuk arah ↗</a>
+                    {distance !== null && <b>{distance < 1 ? `${Math.round(distance * 1000)} m` : `${new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(distance)} km`}</b>}
+                    <a href={directionsUrl(point.position)} target="_blank" rel="noreferrer">{t('Petunjuk arah')} ↗</a>
                   </div>
                 </article>
               )
             })}
           </div>
-          {visiblePoints.length === 0 && <p className="map-empty">Tidak ada destinasi yang sesuai dengan pencarian atau kategori ini.</p>}
+          {visiblePoints.length === 0 && <p className="map-empty" role="status">{t('Tidak ada titik yang cocok. Coba kata kunci atau kategori lain.')}</p>}
         </section>
       )}
-      <p className="gps-distance-disclaimer">Jarak ditampilkan sebagai jarak garis lurus berdasarkan perhitungan koordinat, bukan estimasi jarak atau waktu perjalanan melalui jalan.</p>
+      {!compact && <p className="gps-distance-disclaimer">{t('Jarak ditampilkan sebagai jarak garis lurus berdasarkan perhitungan koordinat, bukan estimasi jarak atau waktu perjalanan melalui jalan.')}</p>}
     </div>
   )
 }

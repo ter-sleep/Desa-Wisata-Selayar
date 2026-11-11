@@ -36,5 +36,5 @@ export const destinations: Destination[] = [
 ]
 
 export const navItems = [
-  { href: '/', label: 'Beranda' }, { href: '/destinasi', label: 'Destinasi' }, { href: '/profil', label: 'Profil Desa' }, { href: '/sejarah-budaya', label: 'Sejarah & Budaya' }, { href: '/agrowisata', label: 'Agrowisata' }, { href: '/pusat-data', label: 'Pusat Data' }, { href: '/peta', label: 'Peta Jelajah' },
+  { href: '/', label: 'Beranda' }, { href: '/destinasi', label: 'Destinasi' }, { href: '/profil', label: 'Profil Desa' }, { href: '/sejarah-budaya', label: 'Sejarah & Budaya' }, { href: '/agrowisata', label: 'Agrowisata' }, { href: '/peta', label: 'Peta Jelajah' },
 ]

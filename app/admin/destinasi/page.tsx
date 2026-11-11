@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowUpRight, MapPin, Pencil, Plus, MapPinned } from 'lucide-react'
 import { DeleteDestinationButton } from '@/components/admin/delete-destination-button'
 import { requireStaffProfile } from '@/lib/auth/permissions'
+import { hasVerifiedCoordinates } from '@/lib/gps-rules'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 
@@ -63,7 +64,7 @@ export default async function AdminDestinationsPage({ searchParams }: { searchPa
                 <td>{row.category}</td>
                 <td>{row.sort_order}</td>
                 <td><span className={`admin-status admin-status-${row.publication_status}`}>{statusLabels[row.publication_status]}</span></td>
-                <td>{row.verification_status === 'verified' ? 'Terverifikasi' : row.verification_status === 'rejected' ? 'Ditolak' : row.latitude !== null ? 'Menunggu verifikasi' : 'Belum ada koordinat'}</td>
+                <td>{hasVerifiedCoordinates(row) ? 'Terverifikasi' : row.verification_status === 'verified' ? 'Perlu tinjauan metadata' : row.verification_status === 'rejected' ? 'Ditolak' : row.latitude !== null ? 'Menunggu verifikasi' : 'Belum ada koordinat'}</td>
                 <td>{new Date(row.updated_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 <td>
                   <div className="admin-row-actions">

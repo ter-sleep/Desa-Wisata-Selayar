@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowUpRight, Images, MapPin, MessageSquare, CalendarDays, ShieldCheck, MapPinned, Mail, Settings } from 'lucide-react'
+import { ArrowUpRight, Images, MapPin, MessageSquare, CalendarDays, ShieldCheck, MapPinned, Mail, Settings, Database } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -73,6 +73,13 @@ export default async function AdminDashboardPage() {
           <p>Tambah, perbarui, arsipkan, atau publikasikan informasi destinasi melalui modul pengelolaan.</p>
         </div>
         <Link href="/admin/destinasi" className="admin-phase-tag">Buka data destinasi <ArrowUpRight size={13} /></Link>
+      </section>
+      <section className="admin-next-card">
+        <div>
+          <h2>Pusat data</h2>
+          <p>Ringkasan kesiapan data destinasi, status verifikasi GPS, dan unduhan CSV untuk keperluan pengelola.</p>
+        </div>
+        <Link href="/admin/pusat-data" className="admin-phase-tag"><Database size={13} /> Buka pusat data <ArrowUpRight size={13} /></Link>
       </section>
       <section className="admin-next-card">
         <div>

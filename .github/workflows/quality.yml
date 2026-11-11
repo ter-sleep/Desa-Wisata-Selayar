@@ -1,0 +1,68 @@
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  supabase-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 3.0.0
+      - name: Start disposable local Supabase
+        shell: bash
+        run: bash .github/scripts/start-disposable-supabase.sh
+      - name: Test real local Supabase services
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          if ! supabase status -o json >"$RUNNER_TEMP/dewis-supabase-status.json" 2>"$RUNNER_TEMP/dewis-supabase-status.log"; then
+            echo "::error::Could not read the local Supabase status."
+            exit 1
+          fi
+          DEWIS_SUPABASE_STATUS_FILE="$RUNNER_TEMP/dewis-supabase-status.json" pnpm test:supabase
+      - name: Stop disposable local Supabase
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          if [ -f supabase/config.toml ]; then
+            if ! supabase stop --no-backup >"$RUNNER_TEMP/dewis-supabase-stop.log" 2>&1; then
+              echo "::error::Could not stop the disposable local Supabase stack."
+              failed=1
+            fi
+          fi
+          rm -f -- "$RUNNER_TEMP/dewis-supabase-start.log" "$RUNNER_TEMP/dewis-supabase-status.json" "$RUNNER_TEMP/dewis-supabase-status.log" "$RUNNER_TEMP/dewis-supabase-stop.log"
+          exit "$failed"

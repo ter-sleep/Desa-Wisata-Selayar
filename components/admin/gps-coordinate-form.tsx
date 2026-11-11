@@ -3,15 +3,17 @@
 import dynamic from 'next/dynamic'
 import { useState, type ChangeEvent } from 'react'
 import { Crosshair, MapPin, Save } from 'lucide-react'
+import { LoadingStatus } from '@/components/loading-status'
 import { saveDestinationCoordinates } from '@/lib/actions/gps'
 
 const CoordinatePickerMap = dynamic(
   () => import('@/components/admin/coordinate-picker-map').then((module) => module.CoordinatePickerMap),
-  { ssr: false, loading: () => <div className="gps-picker-map-loading">Memuat peta pemilih koordinat...</div> },
+  { ssr: false, loading: () => <LoadingStatus className="gps-picker-map-loading">Memuat peta pemilih koordinat...</LoadingStatus> },
 )
 
 type Props = {
   id: string
+  updatedAt: string
   latitude: number | null
   longitude: number | null
   accuracyMeters: number | null
@@ -23,7 +25,7 @@ function formatCoordinate(value: number | null) {
   return value === null ? '' : String(value)
 }
 
-export function GpsCoordinateForm({ id, latitude: initialLat, longitude: initialLng, accuracyMeters, source, method }: Props) {
+export function GpsCoordinateForm({ id, updatedAt, latitude: initialLat, longitude: initialLng, accuracyMeters, source, method }: Props) {
   const [latitude, setLatitude] = useState(formatCoordinate(initialLat))
   const [longitude, setLongitude] = useState(formatCoordinate(initialLng))
   const [accuracy, setAccuracy] = useState(accuracyMeters === null ? '' : String(accuracyMeters))
@@ -71,6 +73,7 @@ export function GpsCoordinateForm({ id, latitude: initialLat, longitude: initial
   return (
     <form action={saveDestinationCoordinates} className="admin-form gps-coordinate-form">
       <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="updated_at" value={updatedAt} />
       <div className="gps-method-actions">
         <button type="button" className="admin-button admin-button-primary" onClick={useDeviceLocation}>
           <Crosshair size={15} /> Gunakan GPS perangkat

@@ -29,6 +29,8 @@ Jalankan setelah migration Tahap 2–5 sudah diterapkan. Urutan lengkap pada pro
 3. `202611040003_gallery_storage.sql`
 4. `202611040004_gps_management.sql`
 5. `202611040005_reservations_and_contact.sql`
+6. `202611040006_stage_7_hardening.sql`
+7. `202611050007_visitor_processing_integrity.sql`
 
 Migration Tahap 6:
 - Menambah `privacy_consent_at` pada reservasi dan pesan.
@@ -38,6 +40,8 @@ Migration Tahap 6:
 - Membatasi UPDATE reservasi/pesan hanya pada kolom operasional yang dibutuhkan staf.
 - Menambahkan trigger PostgreSQL untuk menolak transisi status yang tidak diizinkan meskipun permintaan dikirim langsung melalui API.
 - Membatasi EXECUTE kedua RPC hanya untuk role `anon` dan `authenticated`; pengunjung tidak memperoleh hak SELECT data reservasi/pesan.
+- Migration 006 menghapus policy insert reservasi lama dan memvalidasi nomor WhatsApp baru di database.
+- Migration 007 menetapkan pemroses dari `auth.uid()` dan waktu pemrosesan dari `now()` database pada transisi yang valid, serta menolak perubahan keduanya tanpa transisi. Migration ini tidak mengubah data historis atau hak akses staf.
 
 ## Konfigurasi WhatsApp
 
@@ -85,17 +89,18 @@ Transisi pesan:
 
 - Formulir publik memakai Server Actions, validasi server, honeypot dasar, dan RPC database.
 - Pengunjung tidak mendapatkan hak baca atas tabel reservasi atau pesan.
-- Status awal dan waktu pemrosesan ditetapkan database/server, bukan dari input browser.
+- Status awal serta identitas/waktu pemrosesan ditetapkan database, bukan dari input browser atau payload API.
+- Penghapusan profil yang masih tercatat sebagai pemroses ditolak untuk mempertahankan atribusi; nonaktifkan akun staf untuk mencabut aksesnya.
 - Pembaruan status hanya tersedia untuk staf yang telah lolos pemeriksaan role.
 - Aktivitas status dan pengaturan dicatat ke `audit_logs` sebagai upaya pencatatan pendukung.
 - Kebijakan privasi di dalam aplikasi merupakan naskah awal operasional. Pengelola perlu meninjau kontak pengendali data, tujuan rinci, dasar pemrosesan, jangka waktu retensi, dan prosedur permintaan/penghapusan data sebelum website dipublikasikan.
-- Honeypot hanya mengurangi spam sederhana. Sebelum peluncuran publik, tambahkan rate limiting di edge/platform dan CAPTCHA atau Turnstile sesuai kebutuhan.
+- Honeypot hanya mengurangi spam sederhana pada Server Action. RPC dapat dipanggil langsung melalui API Supabase, sehingga CAPTCHA pada formulir saja tidak melindungi RPC; rancang rate limiting/anti-abuse pada jalur API tersebut sebelum peluncuran.
 
 ## Cara menjalankan
 
 ```bash
-corepack pnpm install --no-frozen-lockfile
-corepack pnpm dev
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
 Buka `http://localhost:3000`. Pastikan `.env.local` berisi `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
@@ -103,8 +108,10 @@ Buka `http://localhost:3000`. Pastikan `.env.local` berisi `NEXT_PUBLIC_SUPABASE
 Pemeriksaan lokal:
 
 ```bash
-corepack pnpm typecheck
-corepack pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
 ## Checklist uji manual

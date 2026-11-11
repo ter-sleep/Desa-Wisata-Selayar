@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowUpRight, CheckCircle2, Clock3, MapPinned, MapPinOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { hasVerifiedCoordinates } from '@/lib/gps-rules'
 import type { Database } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
@@ -25,8 +26,8 @@ export default async function AdminGpsPage({ searchParams }: { searchParams: Sea
 
   const rows = (data || []) as DestinationRow[]
   const withCoordinates = rows.filter((row) => row.latitude !== null && row.longitude !== null)
-  const verified = rows.filter((row) => row.verification_status === 'verified' && row.latitude !== null && row.longitude !== null)
-  const pending = withCoordinates.filter((row) => row.verification_status === 'pending')
+  const verified = rows.filter(hasVerifiedCoordinates)
+  const pending = withCoordinates.filter((row) => row.verification_status === 'pending' || (row.verification_status === 'verified' && !hasVerifiedCoordinates(row)))
   const rejected = withCoordinates.filter((row) => row.verification_status === 'rejected')
   const notices: Record<string, string> = {
     saved: 'Koordinat berhasil disimpan dan menunggu verifikasi.',
@@ -72,7 +73,7 @@ export default async function AdminGpsPage({ searchParams }: { searchParams: Sea
                 <td>{row.latitude !== null && row.longitude !== null ? <><strong>{Number(row.latitude).toFixed(6)}, {Number(row.longitude).toFixed(6)}</strong><small>{row.coordinate_source || 'Sumber belum dicatat'}</small></> : 'Belum tersedia'}</td>
                 <td>{row.coordinate_method === 'device_gps' ? 'GPS perangkat' : row.coordinate_method === 'map_pin' ? 'Pin peta' : row.coordinate_method === 'external_reference' ? 'Referensi eksternal' : '—'}</td>
                 <td>{row.gps_accuracy_m !== null ? `±${Number(row.gps_accuracy_m).toLocaleString('id-ID')} m` : '—'}</td>
-                <td><span className={`admin-status ${row.verification_status === 'verified' ? 'admin-status-published' : row.verification_status === 'rejected' ? 'admin-status-archived' : 'admin-status-draft'}`}>{statusLabels[row.verification_status]}</span></td>
+                <td><span className={`admin-status ${hasVerifiedCoordinates(row) ? 'admin-status-published' : row.verification_status === 'rejected' ? 'admin-status-archived' : 'admin-status-draft'}`}>{row.verification_status === 'verified' && !hasVerifiedCoordinates(row) ? 'Perlu tinjauan metadata' : statusLabels[row.verification_status]}</span></td>
                 <td>{row.publication_status === 'published' ? 'Published' : row.publication_status === 'archived' ? 'Archived' : 'Draft'}</td>
                 <td><div className="admin-row-actions"><Link href={`/admin/peta/${row.id}`} aria-label={`Atur koordinat ${row.name}`} title="Atur dan verifikasi GPS"><MapPinned size={16} /></Link></div></td>
               </tr>

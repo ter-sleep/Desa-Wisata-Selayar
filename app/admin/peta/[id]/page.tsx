@@ -5,6 +5,7 @@ import { GpsCoordinateForm } from '@/components/admin/gps-coordinate-form'
 import { ClearCoordinatesButton } from '@/components/admin/clear-coordinates-button'
 import { reviewDestinationCoordinates } from '@/lib/actions/gps'
 import { requireStaffProfile } from '@/lib/auth/permissions'
+import { hasVerifiedCoordinates } from '@/lib/gps-rules'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 
@@ -38,7 +39,8 @@ export default async function AdminGpsDetailPage({ params, searchParams }: { par
   const destination = data as DestinationRow
   const hasCoordinates = destination.latitude !== null && destination.longitude !== null
   const canReview = profile.role === 'admin' || profile.role === 'super_admin'
-  const isVerified = destination.verification_status === 'verified'
+  const isVerified = hasVerifiedCoordinates(destination)
+  const reviewIncomplete = destination.verification_status === 'verified' && !isVerified
 
   return (
     <div className="admin-dashboard">
@@ -49,11 +51,12 @@ export default async function AdminGpsDetailPage({ params, searchParams }: { par
           <h1>{destination.name}</h1>
           <p>Catat titik berdasarkan survei lapangan atau sumber rujukan yang dapat diverifikasi.</p>
         </div>
-        <span className={`admin-status ${isVerified ? 'admin-status-published' : destination.verification_status === 'rejected' ? 'admin-status-archived' : 'admin-status-draft'}`}>{statusLabels[destination.verification_status]}</span>
+        <span className={`admin-status ${isVerified ? 'admin-status-published' : destination.verification_status === 'rejected' ? 'admin-status-archived' : 'admin-status-draft'}`}>{reviewIncomplete ? 'Perlu tinjauan metadata' : statusLabels[destination.verification_status]}</span>
       </section>
 
       {query.status && notices[query.status] && <div className="admin-form-success" role="status">{notices[query.status]}</div>}
       {query.error && <div className="admin-form-alert" role="alert">{query.error}</div>}
+      {reviewIncomplete && <div className="admin-setup-warning" role="alert">Data GPS lama belum memiliki identitas dan waktu pemeriksaan yang lengkap. Admin perlu memeriksanya kembali sebelum marker tampil kepada publik.</div>}
 
       <section className="admin-next-card gps-destination-context">
         <div>
@@ -79,14 +82,16 @@ export default async function AdminGpsDetailPage({ params, searchParams }: { par
           </div>
         )}
         <GpsCoordinateForm
+          key={destination.updated_at}
           id={destination.id}
+          updatedAt={destination.updated_at}
           latitude={destination.latitude === null ? null : Number(destination.latitude)}
           longitude={destination.longitude === null ? null : Number(destination.longitude)}
           accuracyMeters={destination.gps_accuracy_m === null ? null : Number(destination.gps_accuracy_m)}
           source={destination.coordinate_source}
           method={destination.coordinate_method}
         />
-        {hasCoordinates && <ClearCoordinatesButton id={destination.id} />}
+        {hasCoordinates && <ClearCoordinatesButton id={destination.id} updatedAt={destination.updated_at} />}
       </section>
 
       <section className="admin-media-section gps-section">
@@ -96,12 +101,13 @@ export default async function AdminGpsDetailPage({ params, searchParams }: { par
           <p>Periksa apakah titik benar-benar berada di area destinasi, bukan sekadar pusat desa, jalan umum, atau lokasi yang diperkirakan.</p>
         </div>
         <div className="gps-review-current">
-          <div className="gps-review-status"><span className={`admin-status ${isVerified ? 'admin-status-published' : destination.verification_status === 'rejected' ? 'admin-status-archived' : 'admin-status-draft'}`}>{statusLabels[destination.verification_status]}</span><span>{destination.reviewed_at ? `Diperiksa ${new Date(destination.reviewed_at).toLocaleString('id-ID')}` : 'Belum pernah diperiksa'}</span></div>
+          <div className="gps-review-status"><span className={`admin-status ${isVerified ? 'admin-status-published' : destination.verification_status === 'rejected' ? 'admin-status-archived' : 'admin-status-draft'}`}>{reviewIncomplete ? 'Perlu tinjauan metadata' : statusLabels[destination.verification_status]}</span><span>{destination.reviewed_at ? `Diperiksa ${new Date(destination.reviewed_at).toLocaleString('id-ID')}` : 'Belum pernah diperiksa'}</span></div>
           {destination.verification_note && <p><strong>Catatan sebelumnya:</strong> {destination.verification_note}</p>}
         </div>
         {canReview && hasCoordinates ? (
-          <form action={reviewDestinationCoordinates} className="admin-form gps-review-form">
+          <form key={destination.updated_at} action={reviewDestinationCoordinates} className="admin-form gps-review-form">
             <input type="hidden" name="id" value={destination.id} />
+            <input type="hidden" name="updated_at" value={destination.updated_at} />
             <label className="admin-field">
               <span>Catatan pemeriksaan <b>*</b></span>
               <textarea name="verification_note" minLength={5} maxLength={1000} rows={3} required defaultValue={destination.verification_note || ''} placeholder="Contoh: Titik sesuai dengan hasil survei lapangan dan penanda lokasi destinasi." />
