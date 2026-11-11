@@ -1,0 +1,25 @@
+{
+  "node": {
+    "401971dbc1a2828a1554a532781438078588719d59": {
+      "workers": {
+        "app/kontak/page": {
+          "moduleId": 52569,
+          "async": false
+        }
+      },
+      "exportedName": "submitReservation",
+      "filename": "lib/actions/public-submissions.ts"
+    },
+    "40f21f498abdc5c4ce7709edae67cb77e26cbfc4a9": {
+      "workers": {
+        "app/kontak/page": {
+          "moduleId": 52569,
+          "async": false
+        }
+      },
+      "exportedName": "submitContactMessage",
+      "filename": "lib/actions/public-submissions.ts"
+    }
+  },
+  "edge": {}
+}

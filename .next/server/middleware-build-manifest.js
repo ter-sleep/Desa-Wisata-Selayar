@@ -1,0 +1,322 @@
+globalThis.__BUILD_MANIFEST = {
+  "pages": {
+    "/_app": []
+  },
+  "devFiles": [],
+  "polyfillFiles": [
+    "static/chunks/0cz1d0mv5g_q7.js"
+  ],
+  "lowPriorityFiles": [
+    "static/Tmc8PnkXHfwrMQICFVGX7/_buildManifest.js",
+    "static/Tmc8PnkXHfwrMQICFVGX7/_ssgManifest.js",
+    "static/Tmc8PnkXHfwrMQICFVGX7/_clientMiddlewareManifest.js"
+  ],
+  "rootMainFiles": [
+    "static/chunks/0-o74znen4827.js",
+    "static/chunks/3srfjz42u14tx.js",
+    "static/chunks/3wbm-994r45kr.js",
+    "static/chunks/2oi9n3b4syua3.js",
+    "static/chunks/turbopack-3-ry682tkyiqk.js"
+  ],
+  "rootMainFilesTree": {},
+  "pagesChunkGroupBootstrapParams": {
+    "/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/_not-found/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/_global-error/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/destinasi/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/destinasi/[id]/edit/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/destinasi/baru/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/galeri/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/pengaturan/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/pesan/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/peta/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/peta/[id]/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/admin/reservasi/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/agrowisata/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/destinasi/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/destinasi/[slug]/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/galeri/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/informasi/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/kebijakan-privasi/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/kontak/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/login/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/panduan-berkunjung/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/peta/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/profil/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/pusat-data/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/reservasi/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    },
+    "/sejarah-budaya/page": {
+      "otherChunks": [
+        "static/chunks/0-o74znen4827.js",
+        "static/chunks/3srfjz42u14tx.js",
+        "static/chunks/3wbm-994r45kr.js",
+        "static/chunks/2oi9n3b4syua3.js"
+      ],
+      "runtimeModuleIds": [
+        94553
+      ]
+    }
+  },
+  "chunkLoadingGlobal": "TURBOPACK"
+};

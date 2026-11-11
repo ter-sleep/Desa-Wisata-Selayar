@@ -1,0 +1,55 @@
+{
+  "node": {
+    "00b2f4eab44551016afbb1b06833a488a1104ed159": {
+      "workers": {
+        "app/admin/destinasi/baru/page": {
+          "moduleId": 90059,
+          "async": false
+        }
+      },
+      "exportedName": "signOut",
+      "filename": "app/login/actions.ts"
+    },
+    "407c92d58c26b93e0f302d69b4dcac8284b61367e1": {
+      "workers": {
+        "app/admin/destinasi/baru/page": {
+          "moduleId": 90059,
+          "async": false
+        }
+      },
+      "exportedName": "signIn",
+      "filename": "app/login/actions.ts"
+    },
+    "400e18ed2f6c2eefd132e5e9eac4649742b5c01b65": {
+      "workers": {
+        "app/admin/destinasi/baru/page": {
+          "moduleId": 90059,
+          "async": false
+        }
+      },
+      "exportedName": "createDestination",
+      "filename": "lib/actions/destinations.ts"
+    },
+    "4076684f4928e375fa754a9e2f02a9061e33d445ee": {
+      "workers": {
+        "app/admin/destinasi/baru/page": {
+          "moduleId": 90059,
+          "async": false
+        }
+      },
+      "exportedName": "updateDestination",
+      "filename": "lib/actions/destinations.ts"
+    },
+    "40d0bebec1a9013986fe57006e4c2a3753afaccfd1": {
+      "workers": {
+        "app/admin/destinasi/baru/page": {
+          "moduleId": 90059,
+          "async": false
+        }
+      },
+      "exportedName": "deleteDestination",
+      "filename": "lib/actions/destinations.ts"
+    }
+  },
+  "edge": {}
+}
